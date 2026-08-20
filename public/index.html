@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Freshdesk Ticket Arşivi</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    margin: 0;
+    background: #f3f4f6;
+    color: #111827;
+  }
+  header {
+    background: #fff;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+  header h1 { font-size: 18px; margin: 0; white-space: nowrap; }
+  header input[type="text"] {
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    flex: 1;
+    min-width: 200px;
+  }
+  .btn {
+    padding: 8px 14px;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn:hover { background: #f9fafb; }
+
+  .columns-wrap { position: relative; }
+  #columnsPanel {
+    display: none;
+    position: absolute;
+    top: 110%;
+    right: 0;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    padding: 12px;
+    width: 220px;
+    max-height: 340px;
+    overflow-y: auto;
+    z-index: 30;
+  }
+  #columnsPanel.visible { display: block; }
+  #columnsPanel label { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 5px 4px; cursor: pointer; border-radius: 4px; }
+  #columnsPanel label:hover { background: #f3f4f6; }
+
+  .container { max-width: 1300px; margin: 24px auto; padding: 0 24px; }
+  .meta { color: #6b7280; font-size: 13px; margin-bottom: 12px; display: flex; justify-content: space-between; }
+  .table-wrap { overflow-x: auto; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+  table { width: 100%; min-width: 720px; border-collapse: collapse; background: #fff; }
+  th, td { text-align: left; padding: 10px 14px; font-size: 13px; border-bottom: 1px solid #f0f0f0; white-space: nowrap; }
+  th { background: #f9fafb; color: #6b7280; font-weight: 600; text-transform: uppercase; font-size: 11px; }
+  tr.ticket-row { cursor: pointer; }
+  tr.ticket-row:hover { background: #f9fafb; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .badge-2 { background: #dbeafe; color: #1e40af; }
+  .badge-3 { background: #fef3c7; color: #92400e; }
+  .badge-4 { background: #d1fae5; color: #065f46; }
+  .badge-5 { background: #e5e7eb; color: #374151; }
+  .badge-6, .badge-7 { background: #fee2e2; color: #991b1b; }
+  .pager { display: flex; justify-content: center; gap: 8px; margin: 20px 0; }
+  .pager button { padding: 6px 14px; border: 1px solid #d1d5db; background: #fff; border-radius: 6px; cursor: pointer; font-size: 13px; }
+  .pager button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .empty { text-align: center; padding: 60px; color: #9ca3af; }
+
+  tr.filter-row th { padding: 6px 10px; background: #fff; }
+  tr.filter-row input, tr.filter-row select {
+    width: 100%;
+    padding: 5px 8px;
+    border: 1px solid #d1d5db;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 400;
+    text-transform: none;
+  }
+  .clear-filters { font-size: 11px; color: #00AEEF; cursor: pointer; text-decoration: underline; white-space: nowrap; }
+
+  #overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  #overlay.visible { display: flex; }
+  #panel {
+    background: #fff;
+    width: 1000px;
+    max-width: 92vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    border-radius: 10px;
+    padding: 28px 32px;
+  }
+  #panel h2 { margin: 0 0 8px; font-size: 18px; }
+  #panel .close { float: right; cursor: pointer; font-size: 20px; color: #9ca3af; }
+  .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 20px; font-size: 13px; margin: 16px 0; }
+  .field-grid div span { color: #6b7280; display: block; font-size: 11px; text-transform: uppercase; }
+  .conv { border: 1px solid #f0f0f0; border-radius: 6px; margin-bottom: 8px; background: #fff; }
+  .conv.private { background: #fff7ed; border-color: #fed7aa; }
+  .conv-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 14px; cursor: pointer; }
+  .conv-header:hover { background: rgba(0,0,0,0.03); }
+  .conv .conv-meta { font-size: 11px; color: #9ca3af; }
+  .conv-chevron { font-size: 10px; color: #9ca3af; transition: transform 0.15s; flex-shrink: 0; }
+  .conv.open .conv-chevron { transform: rotate(90deg); }
+  .conv .conv-body { font-size: 13px; line-height: 1.6; padding: 0 14px 14px; display: none; }
+  .conv.open .conv-body { display: block; }
+  .section-title { font-size: 13px; font-weight: 700; margin: 20px 0 8px; color: #374151; }
+
+  @media (max-width: 900px) {
+    .container { margin: 12px auto; padding: 0 10px; }
+    header { padding: 10px 12px; }
+    header input[type="text"] { min-width: 120px; }
+    #panel { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📦 Freshdesk Ticket Arşivi</h1>
+  <input type="text" id="q" placeholder="Genel arama (konu, müşteri, şirket, ajan, etiket)..." />
+  <div class="columns-wrap">
+    <button class="btn" id="columnsBtn">☰ Sütunlar</button>
+    <div id="columnsPanel"></div>
+  </div>
+</header>
+
+<div class="container">
+  <div class="meta">
+    <span id="meta"></span>
+    <span class="clear-filters" onclick="clearFilters()">tüm filtreleri temizle</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr id="headerRow"></tr>
+        <tr class="filter-row" id="filterRow"></tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+  <div class="pager">
+    <button id="prev">← Önceki</button>
+    <span id="pageInfo" style="align-self:center;font-size:13px;color:#6b7280;"></span>
+    <button id="next">Sonraki →</button>
+  </div>
+</div>
+
+<div id="overlay">
+  <div id="panel"></div>
+</div>
+
+<script>
+const STATUS_OPTIONS = [
+  ['2', 'Açık'], ['3', 'Beklemede'], ['4', 'Çözüldü'], ['5', 'Kapandı'],
+  ['6', 'Müşteri Yanıtı Bekleniyor'], ['7', '3. Taraf Yanıtı Bekleniyor'],
+];
+const PRIORITY_OPTIONS = [['1', 'Düşük'], ['2', 'Orta'], ['3', 'Yüksek'], ['4', 'Acil']];
+const SOURCE_OPTIONS = [
+  ['1', 'E-posta'], ['2', 'Portal'], ['3', 'Telefon'], ['4', 'Chat'],
+  ['5', 'Feedback'], ['7', 'Twitter'], ['8', 'Facebook'], ['9', 'Bot'],
+];
+
+// field: backend'e gönderilecek query param adı (metin alanlar için doğrudan, date için _from/_to eklenir)
+const ALL_COLUMNS = [
+  { key: '_id', label: '#', field: 'id', type: 'number', default: true, render: t => t._id },
+  { key: 'subject', label: 'Konu', field: 'subject', type: 'text', default: true, render: t => t.subject || '-' },
+  { key: 'requester_name', label: 'Müşteri', field: 'requester_name', type: 'text', default: true, render: t => t.requester_name || '-' },
+  { key: 'requester_email', label: 'E-posta', field: 'requester_email', type: 'text', default: false, render: t => t.requester_email || '-' },
+  { key: 'company_name', label: 'Şirket', field: 'company_name', type: 'text', default: true, render: t => t.company_name || '-' },
+  { key: 'status_label', label: 'Durum', field: 'status', type: 'select', options: STATUS_OPTIONS, default: true, render: t => `<span class="badge badge-${t.status}">${t.status_label || '-'}</span>` },
+  { key: 'priority_label', label: 'Öncelik', field: 'priority', type: 'select', options: PRIORITY_OPTIONS, default: false, render: t => t.priority_label || '-' },
+  { key: 'source_label', label: 'Kaynak', field: 'source', type: 'select', options: SOURCE_OPTIONS, default: false, render: t => t.source_label || '-' },
+  { key: 'agent_name', label: 'Ajan', field: 'agent_name', type: 'text', default: true, render: t => t.agent_name || '-' },
+  { key: 'group_name', label: 'Grup', field: 'group_name', type: 'text', default: false, render: t => t.group_name || '-' },
+  { key: 'ticket_type', label: 'Tür', field: 'ticket_type', type: 'text', default: false, render: t => t.ticket_type || '-' },
+  { key: 'tags', label: 'Etiketler', field: 'tags', type: 'text', default: false, render: t => (t.tags || []).join(', ') || '-' },
+  { key: 'created_at', label: 'Oluşturulma', field: 'created_at', type: 'date', default: true, render: t => fmtDate(t.created_at) },
+  { key: 'updated_at', label: 'Güncellenme', field: 'updated_at', type: 'date', default: false, render: t => fmtDate(t.updated_at) },
+  { key: 'due_by', label: 'Termin', field: 'due_by', type: 'date', default: false, render: t => fmtDate(t.due_by) },
+];
+
+const STORAGE_KEY = 'fd_arsiv_columns_v1';
+let visibleKeys = loadColumnPrefs();
+let page = 1;
+const perPage = 25;
+
+function loadColumnPrefs() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (Array.isArray(saved) && saved.length) return saved;
+  } catch (_) {}
+  return ALL_COLUMNS.filter(c => c.default).map(c => c.key);
+}
+
+function saveColumnPrefs() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(visibleKeys));
+}
+
+function visibleColumns() {
+  return ALL_COLUMNS.filter(c => visibleKeys.includes(c.key));
+}
+
+function fmtDate(d) {
+  if (!d) return '-';
+  return new Date(d).toLocaleString('tr-TR');
+}
+
+function badge(status, label) {
+  return `<span class="badge badge-${status}">${label || '-'}</span>`;
+}
+
+// ── Sütun seçici panel ──────────────────────────────
+function renderColumnsPanel() {
+  const panel = document.getElementById('columnsPanel');
+  panel.innerHTML = ALL_COLUMNS.map(c => `
+    <label>
+      <input type="checkbox" data-key="${c.key}" ${visibleKeys.includes(c.key) ? 'checked' : ''} />
+      ${c.label}
+    </label>
+  `).join('');
+  panel.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const key = cb.dataset.key;
+      if (cb.checked) {
+        if (!visibleKeys.includes(key)) visibleKeys.push(key);
+      } else {
+        visibleKeys = visibleKeys.filter(k => k !== key);
+      }
+      saveColumnPrefs();
+      renderTableStructure();
+      page = 1;
+      load();
+    });
+  });
+}
+
+document.getElementById('columnsBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  document.getElementById('columnsPanel').classList.toggle('visible');
+});
+document.addEventListener('click', () => document.getElementById('columnsPanel').classList.remove('visible'));
+document.getElementById('columnsPanel').addEventListener('click', (e) => e.stopPropagation());
+
+// ── Tablo başlık + filtre satırını sütun seçimine göre oluştur ──
+function renderTableStructure() {
+  const cols = visibleColumns();
+  const headerRow = document.getElementById('headerRow');
+  headerRow.innerHTML = cols.map(c => `<th>${c.label}</th>`).join('');
+
+  const filterRow = document.getElementById('filterRow');
+  filterRow.innerHTML = cols.map(c => {
+    if (c.type === 'select') {
+      return `<th><select data-field="${c.field}" data-type="${c.type}">
+        <option value="">Tümü</option>
+        ${c.options.map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}
+      </select></th>`;
+    }
+    if (c.type === 'date') {
+      return `<th style="display:flex;gap:4px;">
+        <input type="date" data-field="${c.field}" data-type="date-from" title="Başlangıç" />
+        <input type="date" data-field="${c.field}" data-type="date-to" title="Bitiş" />
+      </th>`;
+    }
+    if (c.type === 'number') {
+      return `<th><input type="text" inputmode="numeric" data-field="${c.field}" data-type="number" placeholder="Ara..." /></th>`;
+    }
+    return `<th><input type="text" data-field="${c.field}" data-type="text" placeholder="Ara..." /></th>`;
+  }).join('');
+
+  filterRow.querySelectorAll('input, select').forEach(el => {
+    const evt = el.tagName === 'SELECT' ? 'change' : 'input';
+    el.addEventListener(evt, () => {
+      clearTimeout(window._filterDebounce);
+      window._filterDebounce = setTimeout(() => { page = 1; load(); }, 300);
+    });
+  });
+}
+
+function collectColumnFilterParams() {
+  const params = {};
+  document.querySelectorAll('#filterRow [data-field]').forEach(el => {
+    if (!el.value) return;
+    if (el.dataset.type === 'date-from') params[el.dataset.field + '_from'] = el.value;
+    else if (el.dataset.type === 'date-to') params[el.dataset.field + '_to'] = el.value;
+    else params[el.dataset.field] = el.value;
+  });
+  return params;
+}
+
+function clearFilters() {
+  document.getElementById('q').value = '';
+  document.querySelectorAll('#filterRow [data-field]').forEach(el => { el.value = ''; });
+  page = 1;
+  load();
+}
+
+async function load() {
+  const q = document.getElementById('q').value;
+  const params = new URLSearchParams({ page, per_page: perPage });
+  if (q) params.set('q', q);
+  for (const [k, v] of Object.entries(collectColumnFilterParams())) params.set(k, v);
+
+  const res = await fetch('/api/tickets?' + params.toString());
+  const data = await res.json();
+
+  const cols = visibleColumns();
+  const rows = document.getElementById('rows');
+  if (!data.results || data.results.length === 0) {
+    rows.innerHTML = `<tr><td colspan="${cols.length}" class="empty">Sonuç bulunamadı.</td></tr>`;
+  } else {
+    rows.innerHTML = data.results.map(t => `
+      <tr class="ticket-row" data-id="${t._id}">
+        ${cols.map(c => `<td>${c.render(t)}</td>`).join('')}
+      </tr>
+    `).join('');
+  }
+
+  document.getElementById('meta').textContent = `Toplam ${data.total} ticket`;
+  document.getElementById('pageInfo').textContent = `Sayfa ${data.page} / ${Math.max(1, Math.ceil(data.total / perPage))}`;
+  document.getElementById('prev').disabled = page <= 1;
+  document.getElementById('next').disabled = page * perPage >= data.total;
+
+  document.querySelectorAll('.ticket-row').forEach(row => {
+    row.addEventListener('click', () => openTicket(row.dataset.id));
+  });
+}
+
+async function openTicket(id) {
+  const res = await fetch('/api/ticket?id=' + id);
+  const data = await res.json();
+  if (data.error) { alert(data.error); return; }
+
+  const t = data.ticket;
+  const cf = Object.entries(t.custom_fields || {}).filter(([,v]) => v !== null && v !== '' && v !== false);
+
+  const convHtml = data.conversations.map((c, i) => `
+    <div class="conv ${c.private ? 'private' : ''}">
+      <div class="conv-header" onclick="toggleConv(${i})">
+        <span class="conv-meta">${c.incoming ? 'Gelen' : 'Giden'} ${c.private ? '· Dahili not' : ''} · ${fmtDate(c.created_at)}</span>
+        <span class="conv-chevron">▶</span>
+      </div>
+      <div class="conv-body">${c.body || c.body_text || ''}</div>
+    </div>
+  `).join('') || '<p style="color:#9ca3af;font-size:13px;">Konuşma kaydı yok.</p>';
+
+  const attHtml = data.attachments.length
+    ? '<ul>' + data.attachments.map(a => {
+        const size = `(${Math.round((a.size||0)/1024)} KB)`;
+        if (!a.attachment_url) return `<li style="color:#9ca3af;">${a.name} ${size} — içerik mevcut değil</li>`;
+        return `<li><a href="${a.attachment_url}" target="_blank" rel="noopener">${a.name}</a> ${size}</li>`;
+      }).join('') + '</ul>'
+    : '';
+
+  document.getElementById('panel').innerHTML = `
+    <span class="close" onclick="closeTicket()">✕</span>
+    <h2>#${t._id} — ${t.subject || '-'}</h2>
+    ${badge(t.status, t.status_label)} ${badge(0, t.priority_label)} ${badge(0, t.source_label)}
+
+    <div class="field-grid">
+      <div><span>Müşteri</span>${t.requester_name || '-'} ${t.requester_email ? '(' + t.requester_email + ')' : ''}</div>
+      <div><span>Şirket</span>${t.company_name || '-'}</div>
+      <div><span>Ajan</span>${t.agent_name || '-'}</div>
+      <div><span>Grup</span>${t.group_name || '-'}</div>
+      <div><span>Oluşturulma</span>${fmtDate(t.created_at)}</div>
+      <div><span>Güncellenme</span>${fmtDate(t.updated_at)}</div>
+      <div><span>Etiketler</span>${(t.tags || []).join(', ') || '-'}</div>
+      <div><span>Tür</span>${t.ticket_type || '-'}</div>
+    </div>
+
+    ${cf.length ? '<div class="section-title">Özel Alanlar</div><div class="field-grid">' + cf.map(([k,v]) => `<div><span>${k}</span>${v}</div>`).join('') + '</div>' : ''}
+
+    <div class="section-title">Konuşmalar (${data.conversations.length})</div>
+    ${convHtml}
+
+    ${attHtml ? '<div class="section-title">Ekler</div>' + attHtml : ''}
+  `;
+  document.getElementById('overlay').classList.add('visible');
+}
+
+function closeTicket() {
+  document.getElementById('overlay').classList.remove('visible');
+}
+
+function toggleConv(i) {
+  const el = document.querySelectorAll('#panel .conv')[i];
+  if (el) el.classList.toggle('open');
+}
+
+document.getElementById('overlay').addEventListener('click', (e) => {
+  if (e.target.id === 'overlay') closeTicket();
+});
+
+document.getElementById('q').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { page = 1; load(); }
+});
+document.getElementById('prev').addEventListener('click', () => { page--; load(); });
+document.getElementById('next').addEventListener('click', () => { page++; load(); });
+
+renderColumnsPanel();
+renderTableStructure();
+load();
+</script>
+
+</body>
+</html>

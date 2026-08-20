@@ -1,0 +1,14 @@
+version: "3.8"
+
+services:
+  fresh-arsiv-api:
+    image: ghcr.io/ftihdgn-code/freshdesk-backup-viewer:latest
+    ports:
+      - "3001:3001"
+    environment:
+      - MONGO_URI=${MONGO_URI}
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s

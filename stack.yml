@@ -1,0 +1,35 @@
+version: "3.8"
+
+services:
+
+  fresh-arsiv:
+
+    image: fresh-arsiv:latest
+
+    networks:
+
+      - traefik-public
+
+    environment:
+      - MONGO_URI=mongodb://192.168.208.169:27017/freshdesk
+      - PORT=3001
+
+    deploy:
+
+      replicas: 1
+
+      labels:
+
+        - "traefik.enable=true"
+
+        # Router (HTTPS)
+        - "traefik.http.routers.fresharsiv.rule=Host(`fresharshive.apsiyon.com`)"
+        - "traefik.http.routers.fresharsiv.entrypoints=websecure"
+        - "traefik.http.routers.fresharsiv.tls=true"
+
+        # Service
+        - "traefik.http.services.fresharsiv.loadbalancer.server.port=3001"
+
+networks:
+  traefik-public:
+    external: true
