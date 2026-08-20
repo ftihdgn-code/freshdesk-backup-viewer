@@ -4,8 +4,14 @@ let cachedClient = null;
 
 export async function getDb() {
   if (!cachedClient) {
-    cachedClient = new MongoClient(process.env.MONGO_URI);
-    await cachedClient.connect();
+    const client = new MongoClient(process.env.MONGO_URI);
+    try {
+      await client.connect();
+    } catch (err) {
+      await client.close().catch(() => {});
+      throw err;
+    }
+    cachedClient = client;
   }
   return cachedClient.db();
 }
