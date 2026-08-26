@@ -1,14 +1,14 @@
 version: "3.8"
 
+# Bu compose dosyası, Mongo + media ile aynı makinede (192.168.208.169)
+# tek-node yerel test için. Prod'da Swarm + Traefik ile stack.yml kullanılıyor.
 services:
   fresh-arsiv-api:
     image: ghcr.io/ftihdgn-code/freshdesk-backup-viewer:latest
-    ports:
-      - "3001:3001"
+    network_mode: host
     environment:
-      - MONGO_URI=${MONGO_URI}
-    deploy:
-      replicas: 1
-      restart_policy:
-        condition: on-failure
-        delay: 5s
+      - MONGO_URI=mongodb://127.0.0.1:27017/freshdesk
+      - PORT=3001
+    volumes:
+      - /home/fatih/media:/app/media:ro
+    restart: unless-stopped
