@@ -421,6 +421,11 @@ document.getElementById('next').addEventListener('click', () => { page++; load()
 
 renderColumnsPanel();
 renderTableStructure();
+
+const urlParams = new URLSearchParams(location.search);
+const qParam = urlParams.get('q');
+if (qParam) document.getElementById('q').value = qParam;
+
 load();
 </script>
 
