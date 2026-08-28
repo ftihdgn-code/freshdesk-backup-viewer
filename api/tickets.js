@@ -45,8 +45,9 @@ export default async function handler(req, res) {
     }
 
     if (q) {
-      const re = new RegExp(escapeRegex(q.trim()), 'i');
-      filter.$or = [
+      const trimmed = q.trim();
+      const re = new RegExp(escapeRegex(trimmed), 'i');
+      const orClauses = [
         { subject: re },
         { requester_name: re },
         { requester_email: re },
@@ -54,6 +55,9 @@ export default async function handler(req, res) {
         { agent_name: re },
         { tags: re },
       ];
+      const qNum = Number(trimmed);
+      if (trimmed !== '' && !Number.isNaN(qNum)) orClauses.push({ _id: qNum });
+      filter.$or = orClauses;
     }
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
