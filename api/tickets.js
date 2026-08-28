@@ -46,18 +46,20 @@ export default async function handler(req, res) {
 
     if (q) {
       const trimmed = q.trim();
-      const re = new RegExp(escapeRegex(trimmed), 'i');
-      const orClauses = [
-        { subject: re },
-        { requester_name: re },
-        { requester_email: re },
-        { company_name: re },
-        { agent_name: re },
-        { tags: re },
-      ];
-      const qNum = Number(trimmed);
-      if (trimmed !== '' && !Number.isNaN(qNum)) orClauses.push({ _id: qNum });
-      filter.$or = orClauses;
+      if (/^\d+$/.test(trimmed)) {
+        // Salt sayısal arama: indexed _id üzerinden hızlı tam eşleşme.
+        filter._id = Number(trimmed);
+      } else {
+        const re = new RegExp(escapeRegex(trimmed), 'i');
+        filter.$or = [
+          { subject: re },
+          { requester_name: re },
+          { requester_email: re },
+          { company_name: re },
+          { agent_name: re },
+          { tags: re },
+        ];
+      }
     }
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
