@@ -13,15 +13,30 @@ function normalizePhone(raw) {
   return d.length >= 10 ? d.slice(-10) : d;
 }
 
-function extractPhone(ticket) {
-  const candidates = [ticket.requester_name, ticket.subject].filter(Boolean);
+async function extractPhone(ticket, db) {
+  const candidates = [
+    ticket.custom_fields?.cf_mteri_telefon,
+    ticket.custom_fields?.cf_fsm_phone_number,
+    ticket.requester_name,
+    ticket.subject,
+  ].filter(Boolean);
   for (const c of candidates) {
-    const m = c.match(/\+?\d[\d\s()-]{8,}\d/);
+    const m = String(c).match(/\+?\d[\d\s()-]{8,}\d/);
     if (m) {
       const n = normalizePhone(m[0]);
       if (n.length === 10) return n;
     }
   }
+
+  // Ticket üzerinde yoksa, requester'ın contact kaydına (phone/mobile) bak.
+  if (ticket.requester_id) {
+    const contact = await db.collection('contacts').findOne({ _id: ticket.requester_id });
+    for (const c of [contact?.mobile, contact?.phone].filter(Boolean)) {
+      const n = normalizePhone(c);
+      if (n.length === 10) return n;
+    }
+  }
+
   return null;
 }
 
@@ -66,7 +81,7 @@ export default async function handler(req, res) {
     const ticket = await db.collection('tickets').findOne({ _id: id });
     if (!ticket) return res.status(404).json({ error: 'Ticket bulunamadı' });
 
-    const phone10 = extractPhone(ticket);
+    const phone10 = await extractPhone(ticket, db);
     if (!phone10) return res.status(404).json({ error: 'Ticket\'ta telefon numarası bulunamadı' });
 
     const { matches } = await findRecordingBlob(ticket.created_at, phone10);
