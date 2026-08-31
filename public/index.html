@@ -128,6 +128,16 @@
   .conv.open .conv-body { display: block; }
   .section-title { font-size: 13px; font-weight: 700; margin: 20px 0 8px; color: #374151; }
 
+  .chat-thread { display: flex; flex-direction: column; gap: 12px; }
+  .chat-turn { display: flex; flex-direction: column; max-width: 70%; }
+  .chat-customer { align-items: flex-start; margin-right: auto; }
+  .chat-agent { align-items: flex-end; margin-left: auto; }
+  .chat-name { font-size: 11px; font-weight: 600; color: #6b7280; margin-bottom: 3px; }
+  .chat-bubble { padding: 8px 12px; border-radius: 12px; font-size: 13px; line-height: 1.5; white-space: pre-wrap; }
+  .chat-customer .chat-bubble { background: #dbeafe; color: #1e3a8a; border-bottom-left-radius: 3px; }
+  .chat-agent .chat-bubble { background: #fff; border: 1px solid #e5e7eb; color: #111827; border-bottom-right-radius: 3px; }
+  .chat-ts { font-size: 10px; color: #9ca3af; margin-top: 3px; }
+
   @media (max-width: 900px) {
     .container { margin: 12px auto; padding: 0 10px; }
     header { padding: 10px 12px; }
@@ -245,6 +255,51 @@ function sanitizeHtml(html) {
     if (el.tagName === 'A') { el.setAttribute('target', '_blank'); el.setAttribute('rel', 'noopener noreferrer'); }
   });
   return div.innerHTML;
+}
+
+function looksLikeHtml(s) {
+  return /<[a-z][^>]*>/i.test(s || '');
+}
+
+// Bazı ticket'larda (özellikle chat widget kaynaklı) description/conversation
+// düz metin olarak geliyor: "İsim   mesaj   HH:MM AM, Dth Mon   İsim   mesaj ...".
+// Zaman damgası kalıbına göre bölüp müşteri/ekip ayrımıyla chat baloncuğu gibi göster.
+function renderChatText(text, requesterName) {
+  if (!text) return '';
+  const TS_RE = /(\d{1,2}:\d{2}\s*[AP]M,\s*\d{1,2}(?:st|nd|rd|th)?\s*\w+)/g;
+  const parts = text.split(TS_RE).map(s => s.trim()).filter(Boolean);
+  const turns = [];
+  for (let i = 0; i < parts.length; i += 2) {
+    const chunk = parts[i];
+    const ts = parts[i + 1] || '';
+    if (!ts) { turns.push(null); continue; }
+    const tokens = chunk.split(/\s{2,}|\n+/).map(s => s.trim()).filter(Boolean);
+    const name = tokens.shift() || '';
+    const msg = tokens.join(' ');
+    if (msg) turns.push({ name, msg, ts });
+  }
+
+  if (!turns.filter(Boolean).length) {
+    return text.split(/\s{2,}|\n+/).map(s => s.trim()).filter(Boolean)
+      .map(line => `<div>${escText(line)}</div>`).join('');
+  }
+
+  const reqFirst = (requesterName || '').trim().split(/\s+/)[0].toLowerCase();
+  return '<div class="chat-thread">' + turns.filter(Boolean).map(t => {
+    const isCustomer = reqFirst && t.name.toLowerCase().includes(reqFirst);
+    const cls = isCustomer ? 'chat-customer' : 'chat-agent';
+    return `
+      <div class="chat-turn ${cls}">
+        <div class="chat-name">${escText(t.name)}</div>
+        <div class="chat-bubble">${escText(t.msg)}</div>
+        <div class="chat-ts">${escText(t.ts)}</div>
+      </div>`;
+  }).join('') + '</div>';
+}
+
+function escText(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 // ── Sütun seçici panel ──────────────────────────────
@@ -371,15 +426,18 @@ async function openTicket(id) {
   const t = data.ticket;
   const cf = Object.entries(t.custom_fields || {}).filter(([,v]) => v !== null && v !== '' && v !== false);
 
-  const convHtml = data.conversations.map((c, i) => `
+  const convHtml = data.conversations.map((c, i) => {
+    const raw = c.body || c.body_text || '';
+    const body = looksLikeHtml(raw) ? sanitizeHtml(raw) : renderChatText(raw, t.requester_name);
+    return `
     <div class="conv ${c.private ? 'private' : ''}">
       <div class="conv-header" onclick="toggleConv(${i})">
         <span class="conv-meta">${c.incoming ? 'Gelen' : 'Giden'} ${c.private ? '· Dahili not' : ''} · ${fmtDate(c.created_at)}</span>
         <span class="conv-chevron">▶</span>
       </div>
-      <div class="conv-body">${sanitizeHtml(c.body || c.body_text || '')}</div>
-    </div>
-  `).join('') || '<p style="color:#9ca3af;font-size:13px;">Konuşma kaydı yok.</p>';
+      <div class="conv-body">${body}</div>
+    </div>`;
+  }).join('') || '<p style="color:#9ca3af;font-size:13px;">Konuşma kaydı yok.</p>';
 
   const attHtml = data.attachments.length
     ? '<ul>' + data.attachments.map(a => {
@@ -408,7 +466,7 @@ async function openTicket(id) {
     ${cf.length ? '<div class="section-title">Özel Alanlar</div><div class="field-grid">' + cf.map(([k,v]) => `<div><span>${k}</span>${v}</div>`).join('') + '</div>' : ''}
 
     <div class="section-title">İlk mesaj</div>
-    <div class="conv-body">${sanitizeHtml(t.description || '')}</div>
+    <div class="conv-body" style="display:block">${looksLikeHtml(t.description) ? sanitizeHtml(t.description || '') : renderChatText(t.description || '', t.requester_name)}</div>
 
     <div class="section-title">Konuşmalar (${data.conversations.length})</div>
     ${convHtml}
