@@ -46,9 +46,22 @@ export default async function handler(req, res) {
 
     if (q) {
       const trimmed = q.trim();
-      if (/^\d+$/.test(trimmed)) {
-        // Salt sayısal arama: indexed _id üzerinden hızlı tam eşleşme.
-        filter._id = Number(trimmed);
+      const bareDigits = trimmed.replace(/\D/g, '');
+      const isDigitsOnly = /^\+?\d+$/.test(trimmed) && bareDigits.length > 0;
+
+      if (isDigitsOnly && bareDigits.length <= 8) {
+        // Kısa salt sayı: ticket numarası — indexed _id üzerinden hızlı tam eşleşme.
+        filter._id = Number(bareDigits);
+      } else if (isDigitsOnly && bareDigits.length >= 9) {
+        // Uzun salt sayı: telefon numarası — 0/+90 farkına dayanıklı olması için
+        // son 10 haneyi (yerel numara çekirdeği) regex ile ara.
+        const core = escapeRegex(bareDigits.slice(-10));
+        const re = new RegExp(core);
+        filter.$or = [
+          { requester_name: re },
+          { subject: re },
+          { 'custom_fields.cf_mteri_telefon': re },
+        ];
       } else {
         const re = new RegExp(escapeRegex(trimmed), 'i');
         filter.$or = [
@@ -58,6 +71,7 @@ export default async function handler(req, res) {
           { company_name: re },
           { agent_name: re },
           { tags: re },
+          { 'custom_fields.cf_mteri_telefon': re },
         ];
       }
     }
