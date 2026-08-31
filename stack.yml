@@ -14,6 +14,13 @@ services:
       - MONGO_URI=mongodb://192.168.208.169:27017/freshdesk
       - PORT=3001
       - MEDIA_ORIGIN=http://192.168.208.169:3001
+      - AZURE_STORAGE_ACCOUNT=apsiyon
+      - AZURE_STORAGE_CONTAINER=verimor-archive
+      - AZURE_TENANT_ID=ee5e8a95-7505-442b-bc1a-a7a55da37167
+      - AZURE_CLIENT_ID=8e1a1f98-29c0-4c5b-ab88-79fe47dac7ed
+      # AZURE_CLIENT_SECRET buraya YAZILMAZ (public repo) — deploy eden shell'de
+      # export edilmeli, docker stack deploy onu ${...} ile buraya enjekte eder.
+      - AZURE_CLIENT_SECRET=${AZURE_CLIENT_SECRET}
 
     deploy:
 
