@@ -284,9 +284,13 @@ function renderChatText(text, requesterName) {
       .map(line => `<div>${escText(line)}</div>`).join('');
   }
 
-  const reqFirst = (requesterName || '').trim().split(/\s+/)[0].toLowerCase();
-  return '<div class="chat-thread">' + turns.filter(Boolean).map(t => {
-    const isCustomer = reqFirst && t.name.toLowerCase().includes(reqFirst);
+  // İlk konuşan taraf müşteridir (chat'ler her zaman müşteri tarafından başlatılır) —
+  // ticket'taki requester_name ile chat'teki görünen ad her zaman örtüşmeyebiliyor,
+  // bu yüzden requester_name'e güvenmek yerine transkriptin kendisinden çıkarıyoruz.
+  const liveTurns = turns.filter(Boolean);
+  const customerName = liveTurns[0].name.toLowerCase();
+  return '<div class="chat-thread">' + liveTurns.map(t => {
+    const isCustomer = t.name.toLowerCase() === customerName;
     const cls = isCustomer ? 'chat-customer' : 'chat-agent';
     return `
       <div class="chat-turn ${cls}">
