@@ -4,7 +4,12 @@ import { estimateMp3DurationSeconds, parseCallDurationSeconds } from './_mp3dura
 
 const BLOB_ROOT = 'apsiyonbilisim.bulutsantralim.com';
 const TZ_OFFSET_MS = 3 * 60 * 60 * 1000; // Türkiye: UTC+3, DST yok
-const DURATION_TOLERANCE_SEC = 5;
+// Nottaki "Çağrı Süresi" muhtemelen çalma/IVR süresini de sayıyor, kayıt
+// dosyası biraz daha kısa olabiliyor (gözlemlenen fark: ~11sn / 282sn ≈ %4).
+// Payı geniş tutmak için sabit + orana dayalı bir tolerans kullanıyoruz.
+function durationToleranceSec(targetSeconds) {
+  return Math.max(10, targetSeconds * 0.15);
+}
 
 function normalizePhone(raw) {
   const digits = (String(raw).match(/\d+/g) || []).join('');
@@ -102,7 +107,7 @@ async function pickBestByDuration(matches, targetSeconds) {
   if (!withDur.length) return null;
   withDur.sort((a, b) => Math.abs(a.dur - targetSeconds) - Math.abs(b.dur - targetSeconds));
   const best = withDur[0];
-  return Math.abs(best.dur - targetSeconds) <= DURATION_TOLERANCE_SEC ? best.blob : null;
+  return Math.abs(best.dur - targetSeconds) <= durationToleranceSec(targetSeconds) ? best.blob : null;
 }
 
 export default async function handler(req, res) {
