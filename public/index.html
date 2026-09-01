@@ -469,6 +469,8 @@ async function openTicket(id) {
 
     ${cf.length ? '<div class="section-title">Özel Alanlar</div><div class="field-grid">' + cf.map(([k,v]) => `<div><span>${k}</span>${v}</div>`).join('') + '</div>' : ''}
 
+    ${t.source === 3 ? '<div class="section-title">Ses Kaydı</div><div id="recBox" style="font-size:13px;color:#9ca3af;">Kontrol ediliyor…</div>' : ''}
+
     <div class="section-title">İlk mesaj</div>
     <div class="conv-body" style="display:block">${looksLikeHtml(t.description) ? sanitizeHtml(t.description || '') : renderChatText(t.description || '', t.requester_name)}</div>
 
@@ -478,6 +480,24 @@ async function openTicket(id) {
     ${attHtml ? '<div class="section-title">Ekler</div>' + attHtml : ''}
   `;
   document.getElementById('overlay').classList.add('visible');
+
+  if (t.source === 3) loadRecording(t._id);
+}
+
+async function loadRecording(id) {
+  const box = document.getElementById('recBox');
+  if (!box) return;
+  try {
+    const res = await fetch('/api/ticket-recording?id=' + id);
+    const data = await res.json();
+    if (!res.ok || data.error) {
+      box.textContent = data.error || 'Ses kaydı bulunamadı.';
+      return;
+    }
+    box.innerHTML = `<audio controls preload="none" src="${data.url}" style="width:100%;max-width:420px;"></audio>`;
+  } catch (e) {
+    box.textContent = 'Ses kaydı kontrol edilirken hata oluştu: ' + e.message;
+  }
 }
 
 function closeTicket() {
