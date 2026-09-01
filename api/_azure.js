@@ -29,6 +29,14 @@ export function getContainerClient() {
   return cachedClient;
 }
 
+export async function downloadRangeBuffer(blobName, count) {
+  const blobClient = getContainerClient().getBlobClient(blobName);
+  const dl = await blobClient.download(0, count);
+  const chunks = [];
+  for await (const chunk of dl.readableStreamBody) chunks.push(chunk);
+  return Buffer.concat(chunks);
+}
+
 export async function mintReadSas(blobPath) {
   getContainerClient(); // ACCOUNT/CONTAINER env kontrolü için
   const parentServiceClient = new BlobServiceClient(`https://${ACCOUNT}.blob.core.windows.net`, getCredential());

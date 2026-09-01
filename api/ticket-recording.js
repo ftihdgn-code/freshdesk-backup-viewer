@@ -1,8 +1,10 @@
 import { getDb } from './_db.js';
-import { getContainerClient, mintReadSas } from './_azure.js';
+import { getContainerClient, mintReadSas, downloadRangeBuffer } from './_azure.js';
+import { estimateMp3DurationSeconds, parseCallDurationSeconds } from './_mp3duration.js';
 
 const BLOB_ROOT = 'apsiyonbilisim.bulutsantralim.com';
 const TZ_OFFSET_MS = 3 * 60 * 60 * 1000; // Türkiye: UTC+3, DST yok
+const DURATION_TOLERANCE_SEC = 5;
 
 function normalizePhone(raw) {
   const digits = (String(raw).match(/\d+/g) || []).join('');
@@ -42,8 +44,7 @@ async function extractPhone(ticket, db) {
 
 // Türkiye yerel takvim günü — Azure klasör yapısı (Y/M/D) gerçek çağrı gününü
 // yansıtıyor, blob'ların lastModified'ı ise sadece toplu yükleme zamanı (güvenilmez,
-// çağrı zamanına yakın olmayabilir) — bu yüzden SADECE gün bazında eşleştiriyoruz,
-// gün içi bir sıralama/en-yakın-seçme yapmıyoruz.
+// çağrı zamanına yakın olmayabilir) — bu yüzden SADECE gün bazında eşleştiriyoruz.
 function dayKey(date) {
   const local = new Date(new Date(date).getTime() + TZ_OFFSET_MS);
   const y = local.getUTCFullYear();
@@ -53,9 +54,7 @@ function dayKey(date) {
 }
 
 // Cevapsız/terk edilmiş/sesli mesaj bırakılan çağrılarda hiçbir zaman kayıt
-// olmaz — bu tür olaylar için arama bile yapmıyoruz. Aksi halde aynı gün o
-// müşterinin (bu ticket'la alakasız) başka bir cevaplanmış çağrısını yanlışlıkla
-// buraya bağlama riski var (yaşandı, bkz. ticket #1174444).
+// olmaz — bu tür olaylar için arama bile yapmıyoruz.
 const MISSED_CALL_RE = /cevaps[ıi]z|terk edilmi[şs]|unanswered|missed\s*call|abandoned|bırakılan sesli mesaj|voicemail/i;
 
 function isMissedCallEvent(text) {
@@ -85,6 +84,27 @@ function listDay(containerClient, key) {
   return dayListCache.get(key);
 }
 
+// Aynı gün + aynı telefon numarasıyla birden fazla gerçek çağrı olabilir (müşteri
+// o gün başka bir konuda da aramış olabilir). Bu durumda notun içindeki "Çağrı
+// Süresi" ile her adayın gerçek (CBR bitrate'ten hesaplanan) süresini karşılaştırıp
+// en yakınını seçiyoruz — sadece gün+telefon eşleşmesi tek başına güvenilir değil.
+async function pickBestByDuration(matches, targetSeconds) {
+  const scored = await Promise.all(matches.map(async (blob) => {
+    try {
+      const buf = await downloadRangeBuffer(blob.name, 4096);
+      const dur = estimateMp3DurationSeconds(buf, blob.properties.contentLength);
+      return { blob, dur };
+    } catch {
+      return { blob, dur: null };
+    }
+  }));
+  const withDur = scored.filter((s) => s.dur != null);
+  if (!withDur.length) return null;
+  withDur.sort((a, b) => Math.abs(a.dur - targetSeconds) - Math.abs(b.dur - targetSeconds));
+  const best = withDur[0];
+  return Math.abs(best.dur - targetSeconds) <= DURATION_TOLERANCE_SEC ? best.blob : null;
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   try {
@@ -97,8 +117,7 @@ export default async function handler(req, res) {
 
     // Ticket'ın kendisi cevapsız/terk edilmiş bir çağrıysa, sonraki notlar
     // (otomatik yanıt, referans numarası vb.) çağrıyla ilgili olmadığı için
-    // "cevapsız" kelimesini hiç geçirmeyebilir ve yanlışlıkla arama gerektiren
-    // bir zaman noktası gibi değerlendirilebilir. Bunu önlemek için ticket
+    // "cevapsız" kelimesini hiç geçirmeyebilir. Bunu önlemek için ticket
     // seviyesinde cevapsız/terk edilmişse hiçbir nota bakmadan direkt çık.
     if (isMissedCallEvent(ticket.subject)) {
       return res.status(404).json({ error: 'Cevapsız/terk edilmiş çağrıda ses kaydı olmaz' });
@@ -117,14 +136,7 @@ export default async function handler(req, res) {
     // Freshcaller, çağrının gerçek özetini ("Çağrı Süresi: ...") tek bir nota
     // yazıyor — orijinal Freshdesk'teki "▶ Play call" butonu da sadece o notta
     // çıkıyor. Bu notu bulursak en güvenilir sinyal budur, sadece ona bakarız.
-    //
-    // Bulamazsak SADECE ticket'ın kendi oluşturulma gününe düşüyoruz — ticket'ın
-    // diğer notlarını (otomatik yanıtlar, referans numaraları vb.) zaman noktası
-    // olarak KULLANMIYORUZ, çünkü bunlar çağrıyla ilgisiz olabilir ve "cevapsız"
-    // gibi bir anahtar kelime de içermeyebilir; taraması o günün alakasız başka
-    // bir çağrısını yanlışlıkla bu ticket'a bağlama riski taşır (yaşandı, bkz.
-    // ticket #955661 — "terk edilmiş çağrı" + ilgisiz notlar 18 yanlış eşleşme
-    // üretmişti).
+    // Bulamazsak SADECE ticket'ın kendi oluşturulma gününe düşüyoruz.
     const callSummaryConvs = conversations.filter((c) =>
       CALL_SUMMARY_RE.test(c.body_text || c.body || '') && !isMissedCallEvent(c.body_text || c.body)
     );
@@ -133,33 +145,44 @@ export default async function handler(req, res) {
       ? callSummaryConvs.map((c) => ({ conversationId: c._id, at: c.created_at }))
       : [{ conversationId: null, at: ticket.created_at }];
 
-    if (!timePoints.length) {
-      return res.status(404).json({ error: 'Cevapsız/terk edilmiş çağrıda ses kaydı olmaz' });
-    }
+    const convById = new Map(conversations.map((c) => [c._id, c]));
 
-    const byDay = new Map(); // dayKey -> [{conversationId}]
+    const byDay = new Map(); // dayKey -> conversationId[]
     for (const tp of timePoints) {
       const key = dayKey(tp.at);
       if (!byDay.has(key)) byDay.set(key, []);
       byDay.get(key).push(tp.conversationId);
     }
 
-    const seenBlobs = new Set();
     const attachments = []; // {conversationId, blob}
 
     for (const [key, rawConversationIds] of byDay) {
       // Aynı gün hem belirli bir konuşma notuna hem de ticket seviyesine (null)
-      // denk geliyorsa, spesifik olanı tercih et — aynı kaydı iki kere gösterme.
+      // denk geliyorsa, spesifik olanı tercih et.
       const specific = rawConversationIds.filter((c) => c !== null);
       const conversationIds = specific.length ? specific : rawConversationIds;
 
       const dayBlobs = await listDay(containerClient, key);
       const matches = dayBlobs.filter((b) => blobMatchesPhone(b.name, phone10));
-      for (const blob of matches) {
-        if (seenBlobs.has(blob.name)) continue;
-        seenBlobs.add(blob.name);
-        for (const conversationId of conversationIds) {
-          attachments.push({ conversationId, blob });
+      if (!matches.length) continue;
+
+      for (const conversationId of conversationIds) {
+        if (matches.length === 1) {
+          attachments.push({ conversationId, blob: matches[0] });
+          continue;
+        }
+
+        const sourceConv = conversationId ? convById.get(conversationId) : null;
+        const targetSeconds = sourceConv
+          ? parseCallDurationSeconds(sourceConv.body_text || sourceConv.body)
+          : null;
+
+        const best = targetSeconds != null ? await pickBestByDuration(matches, targetSeconds) : null;
+        if (best) {
+          attachments.push({ conversationId, blob: best });
+        } else {
+          // Süreyle daraltamadık — belirsiz, tüm adayları şeffaf şekilde göster.
+          for (const blob of matches) attachments.push({ conversationId, blob, ambiguous: true });
         }
       }
     }
@@ -175,6 +198,7 @@ export default async function handler(req, res) {
         url,
         expires_at: expiresOn.toISOString(),
         blob: a.blob.name,
+        ambiguous: !!a.ambiguous,
       };
     }));
 
