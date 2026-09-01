@@ -485,8 +485,11 @@ async function openTicket(id) {
   if (t.source === 3) loadRecordings(t._id);
 }
 
-function renderRecPlayer(url) {
-  return `<div style="padding:6px 14px;"><audio controls preload="none" src="${url}" style="width:100%;max-width:420px;"></audio></div>`;
+function renderRecPlayer(url, ambiguous) {
+  const label = ambiguous
+    ? '<div style="font-size:11px;color:#b45309;margin-bottom:2px;">⚠ Bu gün için birden fazla arama var, hangisi olduğu kesin değil:</div>'
+    : '';
+  return `<div style="padding:6px 14px;">${label}<audio controls preload="none" src="${url}" style="width:100%;max-width:420px;"></audio></div>`;
 }
 
 async function loadRecordings(id) {
@@ -498,7 +501,7 @@ async function loadRecordings(id) {
     data.recordings.forEach((rec) => {
       const targetId = rec.conversation_id ? `rec_c${rec.conversation_id}` : 'rec_ticket_level';
       const el = document.getElementById(targetId);
-      if (el) el.insertAdjacentHTML('beforeend', renderRecPlayer(rec.url));
+      if (el) el.insertAdjacentHTML('beforeend', renderRecPlayer(rec.url, rec.ambiguous));
     });
   } catch (e) {
     // sessiz geç — ses kaydı arayüzü opsiyonel bir katkı, ticket görüntülemeyi bloklamamalı
