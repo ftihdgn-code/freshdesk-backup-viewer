@@ -439,6 +439,7 @@ async function openTicket(id) {
         <span class="conv-meta">${c.incoming ? 'Gelen' : 'Giden'} ${c.private ? '· Dahili not' : ''} · ${fmtDate(c.created_at)}</span>
         <span class="conv-chevron">▶</span>
       </div>
+      <div id="rec_c${c._id}"></div>
       <div class="conv-body">${body}</div>
     </div>`;
   }).join('') || '<p style="color:#9ca3af;font-size:13px;">Konuşma kaydı yok.</p>';
@@ -469,7 +470,7 @@ async function openTicket(id) {
 
     ${cf.length ? '<div class="section-title">Özel Alanlar</div><div class="field-grid">' + cf.map(([k,v]) => `<div><span>${k}</span>${v}</div>`).join('') + '</div>' : ''}
 
-    ${t.source === 3 ? '<div class="section-title">Ses Kaydı</div><div id="recBox" style="font-size:13px;color:#9ca3af;">Kontrol ediliyor…</div>' : ''}
+    <div id="rec_ticket_level"></div>
 
     <div class="section-title">İlk mesaj</div>
     <div class="conv-body" style="display:block">${looksLikeHtml(t.description) ? sanitizeHtml(t.description || '') : renderChatText(t.description || '', t.requester_name)}</div>
@@ -481,22 +482,26 @@ async function openTicket(id) {
   `;
   document.getElementById('overlay').classList.add('visible');
 
-  if (t.source === 3) loadRecording(t._id);
+  if (t.source === 3) loadRecordings(t._id);
 }
 
-async function loadRecording(id) {
-  const box = document.getElementById('recBox');
-  if (!box) return;
+function renderRecPlayer(url) {
+  return `<div style="padding:6px 14px;"><audio controls preload="none" src="${url}" style="width:100%;max-width:420px;"></audio></div>`;
+}
+
+async function loadRecordings(id) {
   try {
     const res = await fetch('/api/ticket-recording?id=' + id);
     const data = await res.json();
-    if (!res.ok || data.error) {
-      box.textContent = data.error || 'Ses kaydı bulunamadı.';
-      return;
-    }
-    box.innerHTML = `<audio controls preload="none" src="${data.url}" style="width:100%;max-width:420px;"></audio>`;
+    if (!res.ok || data.error || !data.recordings) return; // sessizce geç, ses kaydı olmayabilir
+
+    data.recordings.forEach((rec) => {
+      const targetId = rec.conversation_id ? `rec_c${rec.conversation_id}` : 'rec_ticket_level';
+      const el = document.getElementById(targetId);
+      if (el) el.innerHTML = renderRecPlayer(rec.url);
+    });
   } catch (e) {
-    box.textContent = 'Ses kaydı kontrol edilirken hata oluştu: ' + e.message;
+    // sessiz geç — ses kaydı arayüzü opsiyonel bir katkı, ticket görüntülemeyi bloklamamalı
   }
 }
 

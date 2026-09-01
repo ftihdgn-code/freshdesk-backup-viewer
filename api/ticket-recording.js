@@ -54,21 +54,37 @@ function blobMatchesPhone(blobName, targetPhone10) {
   return parts.some((p) => normalizePhone(p) === targetPhone10);
 }
 
-async function findRecordingBlob(createdAt, phone10) {
-  const containerClient = getContainerClient();
+const dayListCache = new Map(); // prefix -> Promise<blob[]>
+function listDay(containerClient, prefix) {
+  if (!dayListCache.has(prefix)) {
+    dayListCache.set(prefix, (async () => {
+      const items = [];
+      for await (const blob of containerClient.listBlobsFlat({ prefix })) items.push(blob);
+      return items;
+    })());
+  }
+  return dayListCache.get(prefix);
+}
+
+async function findRecordingBlob(containerClient, createdAt, phone10) {
   const base = new Date(createdAt);
   const dayOffsets = [0, -1, 1]; // saat dilimi/işleme gecikmesi payı
 
   for (const offset of dayOffsets) {
     const d = new Date(base.getTime() + offset * 24 * 60 * 60 * 1000);
     const prefix = dayPrefix(d);
-    const matches = [];
-    for await (const blob of containerClient.listBlobsFlat({ prefix })) {
-      if (blobMatchesPhone(blob.name, phone10)) matches.push(blob);
+    const dayBlobs = await listDay(containerClient, prefix);
+    const matches = dayBlobs.filter((b) => blobMatchesPhone(b.name, phone10));
+    if (matches.length) {
+      const target = base.getTime();
+      matches.sort((a, b) =>
+        Math.abs(a.properties.lastModified.getTime() - target) -
+        Math.abs(b.properties.lastModified.getTime() - target)
+      );
+      return matches[0];
     }
-    if (matches.length) return { matches, prefix };
   }
-  return { matches: [], prefix: null };
+  return null;
 }
 
 export default async function handler(req, res) {
@@ -84,26 +100,50 @@ export default async function handler(req, res) {
     const phone10 = await extractPhone(ticket, db);
     if (!phone10) return res.status(404).json({ error: 'Ticket\'ta telefon numarası bulunamadı' });
 
-    const { matches } = await findRecordingBlob(ticket.created_at, phone10);
-    if (!matches.length) {
+    const conversations = await db.collection('conversations')
+      .find({ ticket_id: id })
+      .sort({ created_at: 1 })
+      .toArray();
+
+    const containerClient = getContainerClient();
+
+    // Her konuşma notu kendi zaman damgasıyla aranıyor (bir ticket'ta birden
+    // fazla görüşme/çağrı notu olabilir). Ayrıca hiçbir nota bağlanamayan
+    // (conversation_id: null) durum için ticket'ın kendi oluşturulma anı da denenir.
+    const timePoints = [
+      ...conversations.map((c) => ({ conversationId: c._id, at: c.created_at })),
+      { conversationId: null, at: ticket.created_at },
+    ];
+
+    const found = await Promise.all(timePoints.map(async (tp) => {
+      const blob = await findRecordingBlob(containerClient, tp.at, phone10);
+      return blob ? { conversationId: tp.conversationId, blob } : null;
+    }));
+
+    // Aynı blob birden fazla zaman noktasından eşleşmiş olabilir (örn. ticket
+    // seviyesi ile en yakın not aynı çağrıyı bulduysa) — tekrarları ele.
+    const seenBlobs = new Set();
+    const unique = found.filter(Boolean).filter((f) => {
+      if (seenBlobs.has(f.blob.name)) return false;
+      seenBlobs.add(f.blob.name);
+      return true;
+    });
+
+    if (!unique.length) {
       return res.status(404).json({ error: 'Kayıt bulunamadı (arşiv bu tarihi kapsamıyor olabilir veya çağrı ses kaydı yok)' });
     }
 
-    // Birden fazla eşleşme varsa ticket oluşturulma anına en yakın olanı seç.
-    const target = ticket.created_at.getTime();
-    matches.sort((a, b) =>
-      Math.abs(a.properties.lastModified.getTime() - target) -
-      Math.abs(b.properties.lastModified.getTime() - target)
-    );
-    const chosen = matches[0];
+    const recordings = await Promise.all(unique.map(async (f) => {
+      const { url, expiresOn } = await mintReadSas(f.blob.name);
+      return {
+        conversation_id: f.conversationId,
+        url,
+        expires_at: expiresOn.toISOString(),
+        blob: f.blob.name,
+      };
+    }));
 
-    const { url, expiresOn } = await mintReadSas(chosen.name);
-    res.status(200).json({
-      url,
-      expires_at: expiresOn.toISOString(),
-      blob: chosen.name,
-      alternatives: matches.length - 1,
-    });
+    res.status(200).json({ recordings });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
