@@ -430,7 +430,15 @@ async function openTicket(id) {
   const t = data.ticket;
   const cf = Object.entries(t.custom_fields || {}).filter(([,v]) => v !== null && v !== '' && v !== false);
 
-  const convHtml = data.conversations.map((c, i) => {
+  // Freshcaller'ın attığı saf sistem metadata notu ("created_by: ...\nfreshcaller: true\ntime: ...")
+  // insana hiçbir bilgi vermiyor — gösterilecek konuşma listesinden çıkarıyoruz
+  // (içindeki agent_id zaten "Created by" satırı için ayrıca kullanıldı).
+  const visibleConversations = data.conversations.filter((c) => {
+    const raw = c.body_text || c.body || '';
+    return !(/created_by:\s*\d+/i.test(raw) && /freshcaller:\s*true/i.test(raw));
+  });
+
+  const convHtml = visibleConversations.map((c, i) => {
     const raw = c.body || c.body_text || '';
     const body = looksLikeHtml(raw) ? sanitizeHtml(raw) : renderChatText(raw, t.requester_name);
     return `
@@ -455,6 +463,7 @@ async function openTicket(id) {
   document.getElementById('panel').innerHTML = `
     <span class="close" onclick="closeTicket()">✕</span>
     <h2>#${t._id} — ${t.subject || '-'}</h2>
+    ${data.createdByName ? `<div style="color:#6b7280;font-size:12px;margin-bottom:6px;">Created by ${data.createdByName}</div>` : ''}
     ${badge(t.status, t.status_label)} ${badge(0, t.priority_label)} ${badge(0, t.source_label)}
 
     <div class="field-grid">
@@ -472,10 +481,12 @@ async function openTicket(id) {
 
     <div id="rec_ticket_level"></div>
 
+    ${t.source === 3 ? '' : `
     <div class="section-title">İlk mesaj</div>
     <div class="conv-body" style="display:block">${looksLikeHtml(t.description) ? sanitizeHtml(t.description || '') : renderChatText(t.description || '', t.requester_name)}</div>
+    `}
 
-    <div class="section-title">Konuşmalar (${data.conversations.length})</div>
+    <div class="section-title">Konuşmalar (${visibleConversations.length})</div>
     ${convHtml}
 
     ${attHtml ? '<div class="section-title">Ekler</div>' + attHtml : ''}

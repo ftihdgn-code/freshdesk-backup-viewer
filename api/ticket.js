@@ -21,7 +21,25 @@ export default async function handler(req, res) {
       .find({ ticket_id: id })
       .toArray();
 
-    res.status(200).json({ ticket, conversations, attachments });
+    // Freshcaller çağrılarında ilk not saf sistem metadata'sı oluyor
+    // ("created_by: <agent_id>\nfreshcaller: true\ntime: ..."), kendisi
+    // insana gösterilmeye değmez ama içindeki agent_id, orijinal Freshdesk'te
+    // ticket başlığının altında görünen "Created by <Ad Soyad>" bilgisini taşıyor.
+    let createdByName = null;
+    const metaConv = conversations.find((c) => {
+      const raw = c.body_text || c.body || '';
+      return /created_by:\s*\d+/i.test(raw) && /freshcaller:\s*true/i.test(raw);
+    });
+    if (metaConv) {
+      const raw = metaConv.body_text || metaConv.body || '';
+      const m = raw.match(/created_by:\s*(\d+)/i);
+      if (m) {
+        const agent = await db.collection('agents').findOne({ _id: Number(m[1]) });
+        if (agent) createdByName = agent.name;
+      }
+    }
+
+    res.status(200).json({ ticket, conversations, attachments, createdByName });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
