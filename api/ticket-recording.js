@@ -52,6 +52,16 @@ function dayKey(date) {
   return `${y}/${m}/${d}`;
 }
 
+// Cevapsız/terk edilmiş/sesli mesaj bırakılan çağrılarda hiçbir zaman kayıt
+// olmaz — bu tür olaylar için arama bile yapmıyoruz. Aksi halde aynı gün o
+// müşterinin (bu ticket'la alakasız) başka bir cevaplanmış çağrısını yanlışlıkla
+// buraya bağlama riski var (yaşandı, bkz. ticket #1174444).
+const MISSED_CALL_RE = /cevaps[ıi]z|terk edilmi[şs]|unanswered|missed\s*call|abandoned|bırakılan sesli mesaj|voicemail/i;
+
+function isMissedCallEvent(text) {
+  return MISSED_CALL_RE.test(text || '');
+}
+
 function blobMatchesPhone(blobName, targetPhone10) {
   const fname = blobName.split('/').pop().replace(/\.mp3$/i, '');
   const parts = fname.split('_').slice(1); // ilk parça call_uuid
@@ -96,9 +106,15 @@ export default async function handler(req, res) {
     // nota/ticket'a bağlanır — hangisinin "doğru" olduğunu ayırt edecek
     // güvenilir bir zaman bilgisi yok (bkz. yukarıdaki not).
     const timePoints = [
-      ...conversations.map((c) => ({ conversationId: c._id, at: c.created_at })),
-      { conversationId: null, at: ticket.created_at },
+      ...conversations
+        .filter((c) => !isMissedCallEvent(c.body_text || c.body))
+        .map((c) => ({ conversationId: c._id, at: c.created_at })),
+      ...(isMissedCallEvent(ticket.subject) ? [] : [{ conversationId: null, at: ticket.created_at }]),
     ];
+
+    if (!timePoints.length) {
+      return res.status(404).json({ error: 'Cevapsız/terk edilmiş çağrıda ses kaydı olmaz' });
+    }
 
     const byDay = new Map(); // dayKey -> [{conversationId}]
     for (const tp of timePoints) {
