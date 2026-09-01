@@ -62,6 +62,10 @@ function isMissedCallEvent(text) {
   return MISSED_CALL_RE.test(text || '');
 }
 
+// Freshcaller'ın çağrı özetini yazdığı not — "▶ Play call" butonunun orijinal
+// Freshdesk'te göründüğü yer tam olarak burası.
+const CALL_SUMMARY_RE = /Çağrı Süresi|Call Duration/i;
+
 function blobMatchesPhone(blobName, targetPhone10) {
   const fname = blobName.split('/').pop().replace(/\.mp3$/i, '');
   const parts = fname.split('_').slice(1); // ilk parça call_uuid
@@ -101,16 +105,25 @@ export default async function handler(req, res) {
 
     const containerClient = getContainerClient();
 
-    // Her konuşma notu (+ hiçbirine denk gelmezse ticket'ın kendisi) kendi
-    // takvim gününde aranıyor. Aynı günde birden fazla çağrı varsa hepsi o
-    // nota/ticket'a bağlanır — hangisinin "doğru" olduğunu ayırt edecek
-    // güvenilir bir zaman bilgisi yok (bkz. yukarıdaki not).
-    const timePoints = [
-      ...conversations
-        .filter((c) => !isMissedCallEvent(c.body_text || c.body))
-        .map((c) => ({ conversationId: c._id, at: c.created_at })),
-      ...(isMissedCallEvent(ticket.subject) ? [] : [{ conversationId: null, at: ticket.created_at }]),
-    ];
+    // Freshcaller, çağrının gerçek özetini ("Çağrı Süresi: ...") tek bir nota
+    // yazıyor — orijinal Freshdesk'teki "▶ Play call" butonu da sadece o notta
+    // çıkıyor. Diğer notlar (sistem metadata'sı, CSAT/WhatsApp anketi vb.)
+    // aynı çağrıyla ilgili olsa da kendi kaydı yok; oraya da eklersek aynı ses
+    // birden fazla kutuda tekrarlanmış olur. O yüzden önce sadece bu notu ara;
+    // ticket'ta böyle bir not yoksa (format farklıysa) diğer notlara/ticket
+    // seviyesine düşerek eskisi gibi geniş aramaya geri dön.
+    const callSummaryConvs = conversations.filter((c) =>
+      CALL_SUMMARY_RE.test(c.body_text || c.body || '') && !isMissedCallEvent(c.body_text || c.body)
+    );
+
+    const timePoints = callSummaryConvs.length
+      ? callSummaryConvs.map((c) => ({ conversationId: c._id, at: c.created_at }))
+      : [
+          ...conversations
+            .filter((c) => !isMissedCallEvent(c.body_text || c.body))
+            .map((c) => ({ conversationId: c._id, at: c.created_at })),
+          ...(isMissedCallEvent(ticket.subject) ? [] : [{ conversationId: null, at: ticket.created_at }]),
+        ];
 
     if (!timePoints.length) {
       return res.status(404).json({ error: 'Cevapsız/terk edilmiş çağrıda ses kaydı olmaz' });
