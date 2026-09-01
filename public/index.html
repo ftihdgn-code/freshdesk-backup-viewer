@@ -238,6 +238,19 @@ function fmtDate(d) {
   return new Date(d).toLocaleString('tr-TR');
 }
 
+const AVATAR_COLORS = ['#2563eb', '#059669', '#d97706', '#dc2626', '#7c3aed', '#0891b2', '#db2777', '#65a30d'];
+
+function initialsAvatar(name, size) {
+  if (!name) return '';
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  const initials = ((parts[0]?.[0] || '') + (parts[1]?.[0] || '')).toUpperCase();
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
+  const color = AVATAR_COLORS[hash % AVATAR_COLORS.length];
+  const px = size || 22;
+  return `<span style="display:inline-flex;align-items:center;justify-content:center;width:${px}px;height:${px}px;border-radius:50%;background:${color};color:#fff;font-size:${Math.round(px*0.42)}px;font-weight:600;flex-shrink:0;vertical-align:middle;">${initials}</span>`;
+}
+
 function badge(status, label) {
   return `<span class="badge badge-${status}">${label || '-'}</span>`;
 }
@@ -463,7 +476,7 @@ async function openTicket(id) {
   document.getElementById('panel').innerHTML = `
     <span class="close" onclick="closeTicket()">✕</span>
     <h2>#${t._id} — ${t.subject || '-'}</h2>
-    ${data.createdByName ? `<div style="color:#6b7280;font-size:12px;margin-bottom:6px;">Created by ${data.createdByName}</div>` : ''}
+    ${data.createdByName ? `<div style="display:flex;align-items:center;gap:6px;color:#6b7280;font-size:12px;margin-bottom:6px;">${initialsAvatar(data.createdByName)} Created by ${data.createdByName}</div>` : ''}
     ${badge(t.status, t.status_label)} ${badge(0, t.priority_label)} ${badge(0, t.source_label)}
 
     <div class="field-grid">
