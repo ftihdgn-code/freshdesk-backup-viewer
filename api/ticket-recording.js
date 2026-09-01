@@ -95,6 +95,15 @@ export default async function handler(req, res) {
     const ticket = await db.collection('tickets').findOne({ _id: id });
     if (!ticket) return res.status(404).json({ error: 'Ticket bulunamadı' });
 
+    // Ticket'ın kendisi cevapsız/terk edilmiş bir çağrıysa, sonraki notlar
+    // (otomatik yanıt, referans numarası vb.) çağrıyla ilgili olmadığı için
+    // "cevapsız" kelimesini hiç geçirmeyebilir ve yanlışlıkla arama gerektiren
+    // bir zaman noktası gibi değerlendirilebilir. Bunu önlemek için ticket
+    // seviyesinde cevapsız/terk edilmişse hiçbir nota bakmadan direkt çık.
+    if (isMissedCallEvent(ticket.subject)) {
+      return res.status(404).json({ error: 'Cevapsız/terk edilmiş çağrıda ses kaydı olmaz' });
+    }
+
     const phone10 = await extractPhone(ticket, db);
     if (!phone10) return res.status(404).json({ error: 'Ticket\'ta telefon numarası bulunamadı' });
 
@@ -107,23 +116,22 @@ export default async function handler(req, res) {
 
     // Freshcaller, çağrının gerçek özetini ("Çağrı Süresi: ...") tek bir nota
     // yazıyor — orijinal Freshdesk'teki "▶ Play call" butonu da sadece o notta
-    // çıkıyor. Diğer notlar (sistem metadata'sı, CSAT/WhatsApp anketi vb.)
-    // aynı çağrıyla ilgili olsa da kendi kaydı yok; oraya da eklersek aynı ses
-    // birden fazla kutuda tekrarlanmış olur. O yüzden önce sadece bu notu ara;
-    // ticket'ta böyle bir not yoksa (format farklıysa) diğer notlara/ticket
-    // seviyesine düşerek eskisi gibi geniş aramaya geri dön.
+    // çıkıyor. Bu notu bulursak en güvenilir sinyal budur, sadece ona bakarız.
+    //
+    // Bulamazsak SADECE ticket'ın kendi oluşturulma gününe düşüyoruz — ticket'ın
+    // diğer notlarını (otomatik yanıtlar, referans numaraları vb.) zaman noktası
+    // olarak KULLANMIYORUZ, çünkü bunlar çağrıyla ilgisiz olabilir ve "cevapsız"
+    // gibi bir anahtar kelime de içermeyebilir; taraması o günün alakasız başka
+    // bir çağrısını yanlışlıkla bu ticket'a bağlama riski taşır (yaşandı, bkz.
+    // ticket #955661 — "terk edilmiş çağrı" + ilgisiz notlar 18 yanlış eşleşme
+    // üretmişti).
     const callSummaryConvs = conversations.filter((c) =>
       CALL_SUMMARY_RE.test(c.body_text || c.body || '') && !isMissedCallEvent(c.body_text || c.body)
     );
 
     const timePoints = callSummaryConvs.length
       ? callSummaryConvs.map((c) => ({ conversationId: c._id, at: c.created_at }))
-      : [
-          ...conversations
-            .filter((c) => !isMissedCallEvent(c.body_text || c.body))
-            .map((c) => ({ conversationId: c._id, at: c.created_at })),
-          ...(isMissedCallEvent(ticket.subject) ? [] : [{ conversationId: null, at: ticket.created_at }]),
-        ];
+      : [{ conversationId: null, at: ticket.created_at }];
 
     if (!timePoints.length) {
       return res.status(404).json({ error: 'Cevapsız/terk edilmiş çağrıda ses kaydı olmaz' });
