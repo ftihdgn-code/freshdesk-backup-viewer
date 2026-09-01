@@ -498,7 +498,7 @@ async function loadRecordings(id) {
     data.recordings.forEach((rec) => {
       const targetId = rec.conversation_id ? `rec_c${rec.conversation_id}` : 'rec_ticket_level';
       const el = document.getElementById(targetId);
-      if (el) el.innerHTML = renderRecPlayer(rec.url);
+      if (el) el.insertAdjacentHTML('beforeend', renderRecPlayer(rec.url));
     });
   } catch (e) {
     // sessiz geç — ses kaydı arayüzü opsiyonel bir katkı, ticket görüntülemeyi bloklamamalı
