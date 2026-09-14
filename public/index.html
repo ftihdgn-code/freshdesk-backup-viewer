@@ -270,8 +270,11 @@ function sanitizeHtml(html) {
   return div.innerHTML;
 }
 
+// Sadece bilinen gerçek HTML etiketlerini arar — "<akademi@apsiyon.com>" gibi
+// köşeli parantezli e-posta adresleri "<a...>" etiketiyle karışıp yanlışlıkla
+// HTML sanılmasın diye \b (kelime sınırı) kullanılıyor.
 function looksLikeHtml(s) {
-  return /<[a-z][^>]*>/i.test(s || '');
+  return /<\/?(?:div|p|span|br|hr|strong|b|i|em|u|a|ul|ol|li|table|thead|tbody|tr|td|th|blockquote|h[1-6]|img|pre|code)\b/i.test(s || '');
 }
 
 // Bazı ticket'larda (özellikle chat widget kaynaklı) description/conversation
