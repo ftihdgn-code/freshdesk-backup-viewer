@@ -19,12 +19,14 @@ services:
       - AZURE_TENANT_ID=ee5e8a95-7505-442b-bc1a-a7a55da37167
       - AZURE_CLIENT_ID=8e1a1f98-29c0-4c5b-ab88-79fe47dac7ed
 
-    # AZURE_CLIENT_SECRET artık env var değil, Swarm secret olarak mount ediliyor
-    # (/run/secrets/azure_client_secret). Secret'ın kendisi bu dosyada yazmaz —
-    # "external: true" ile, deploy'dan önce ayrıca oluşturulmuş olması gerekir:
-    #   printf '<secret-değeri>' | docker secret create azure_client_secret -
+    # AZURE_CLIENT_SECRET artık env var değil, Swarm secret olarak mount ediliyor.
+    # Gerçek Swarm secret adı azure_client_secret_v2 (eski azure_client_secret zaten
+    # başka bir service'te kullanımdaydı, silinemediği için versiyonlandı) — ama
+    # container içinde kodun beklediği eski isimle (/run/secrets/azure_client_secret)
+    # mount ediliyor, kod tarafında değişiklik gerekmiyor.
     secrets:
-      - azure_client_secret
+      - source: azure_client_secret_v2
+        target: azure_client_secret
 
     deploy:
 
@@ -47,5 +49,5 @@ networks:
     external: true
 
 secrets:
-  azure_client_secret:
+  azure_client_secret_v2:
     external: true
