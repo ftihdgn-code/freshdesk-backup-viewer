@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import { ClientSecretCredential } from '@azure/identity';
 import { BlobServiceClient, generateBlobSASQueryParameters, BlobSASPermissions } from '@azure/storage-blob';
 
@@ -5,13 +6,26 @@ const ACCOUNT = process.env.AZURE_STORAGE_ACCOUNT;
 const CONTAINER = process.env.AZURE_STORAGE_CONTAINER;
 const SAS_TTL_MS = 5 * 60 * 1000;
 
+// Production'da Swarm secret olarak /run/secrets/azure_client_secret'a mount
+// ediliyor; yerel docker-compose testinde (secret yok) AZURE_CLIENT_SECRET env
+// var'ına düşer.
+function getClientSecret() {
+  const filePath = process.env.AZURE_CLIENT_SECRET_FILE || '/run/secrets/azure_client_secret';
+  try {
+    if (fs.existsSync(filePath)) return fs.readFileSync(filePath, 'utf8').trim();
+  } catch {
+    // dosya okunamazsa env var'a düş
+  }
+  return process.env.AZURE_CLIENT_SECRET;
+}
+
 let cachedCredential = null;
 function getCredential() {
   if (!cachedCredential) {
     cachedCredential = new ClientSecretCredential(
       process.env.AZURE_TENANT_ID,
       process.env.AZURE_CLIENT_ID,
-      process.env.AZURE_CLIENT_SECRET
+      getClientSecret()
     );
   }
   return cachedCredential;
