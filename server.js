@@ -15,6 +15,23 @@ const MEDIA_ORIGIN = process.env.MEDIA_ORIGIN || null;
 
 const app = express();
 
+// Bu sunucu private bir IP'de (Traefik arkasında) çalışıyor. Zendesk gibi public
+// bir sayfadan buraya fetch atıldığında, Chrome'un Private Network Access (PNA)
+// politikası önce bir CORS preflight (OPTIONS, "Access-Control-Request-Private-
+// Network: true" header'ıyla) gönderir ve yanıtta "Access-Control-Allow-Private-
+// Network: true" bekler — yoksa asıl isteği hiç göndermeden sessizce engeller/askıda
+// bırakır. Bunu tüm route'larda (preflight dahil) karşılıyoruz.
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Private-Network', 'true');
+  if (req.method === 'OPTIONS') {
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', '*');
+    return res.status(204).end();
+  }
+  next();
+});
+
 app.get('/api/tickets', ticketsHandler);
 app.get('/api/ticket', ticketHandler);
 app.get('/api/recording-sas', recordingSasHandler);
