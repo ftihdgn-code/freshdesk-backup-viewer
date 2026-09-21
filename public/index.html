@@ -9,96 +9,171 @@
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     margin: 0;
-    background: #f3f4f6;
-    color: #111827;
+    background: #f8fafc;
+    color: #1e293b;
   }
+
+  /* Header */
   header {
     background: #fff;
-    border-bottom: 1px solid #e5e7eb;
-    padding: 16px 24px;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 12px 24px;
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 20px;
     flex-wrap: wrap;
     position: sticky;
     top: 0;
     z-index: 20;
   }
-  header h1 { font-size: 18px; margin: 0; white-space: nowrap; }
-  header input[type="text"] {
-    padding: 8px 12px;
-    border: 1px solid #d1d5db;
-    border-radius: 6px;
-    font-size: 14px;
-    flex: 1;
-    min-width: 200px;
+  .brand { display: flex; align-items: center; gap: 10px; white-space: nowrap; }
+  .brand-icon {
+    width: 34px; height: 34px; border-radius: 10px;
+    background: #fef3c7; border: 1px solid #fde68a; color: #b45309;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
   }
+  .brand-icon svg { width: 17px; height: 17px; }
+  .brand-title { display: flex; align-items: baseline; gap: 7px; }
+  .brand-title h1 { font-size: 15px; font-weight: 700; margin: 0; color: #0f172a; }
+  .brand-chip {
+    font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px;
+    background: #fef3c7; color: #92400e; border: 1px solid #fde68a; border-radius: 5px; padding: 1px 6px;
+  }
+  .brand-sub { font-size: 10.5px; color: #94a3b8; margin: 1px 0 0; }
+
+  .search-wrap { position: relative; flex: 1; min-width: 220px; max-width: 640px; }
+  .search-wrap svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: #94a3b8; pointer-events: none; }
+  header input#q {
+    width: 100%;
+    padding: 8px 40px 8px 34px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #1e293b;
+  }
+  header input#q:focus { outline: none; background: #fff; border-color: #0284c7; box-shadow: 0 0 0 3px rgba(2,132,199,0.12); }
+  .kbd-hint {
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    font-size: 9.5px; font-family: ui-monospace, monospace; color: #94a3b8;
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 4px; padding: 1px 5px;
+    pointer-events: none;
+  }
+
   .btn {
     padding: 8px 14px;
-    border: 1px solid #d1d5db;
-    background: #fff;
-    border-radius: 6px;
-    font-size: 13px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    color: #475569;
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-weight: 500;
     cursor: pointer;
     white-space: nowrap;
   }
-  .btn:hover { background: #f9fafb; }
+  .btn:hover { background: #f1f5f9; }
 
   .columns-wrap { position: relative; }
   #columnsPanel {
     display: none;
     position: absolute;
-    top: 110%;
+    top: 115%;
     right: 0;
     background: #fff;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-    padding: 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(15,23,42,0.12);
+    padding: 10px;
     width: 220px;
     max-height: 340px;
     overflow-y: auto;
     z-index: 30;
   }
   #columnsPanel.visible { display: block; }
-  #columnsPanel label { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 5px 4px; cursor: pointer; border-radius: 4px; }
-  #columnsPanel label:hover { background: #f3f4f6; }
+  #columnsPanel label { display: flex; align-items: center; gap: 8px; font-size: 12.5px; padding: 6px 6px; cursor: pointer; border-radius: 6px; color: #334155; }
+  #columnsPanel label:hover { background: #f1f5f9; }
 
-  .container { max-width: 1300px; margin: 24px auto; padding: 0 24px; }
-  .meta { color: #6b7280; font-size: 13px; margin-bottom: 12px; display: flex; justify-content: space-between; }
-  .table-wrap { overflow-x: auto; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-  table { width: 100%; min-width: 720px; border-collapse: collapse; background: #fff; }
-  th, td { text-align: left; padding: 10px 14px; font-size: 13px; border-bottom: 1px solid #f0f0f0; white-space: nowrap; }
-  th { background: #f9fafb; color: #6b7280; font-weight: 600; text-transform: uppercase; font-size: 11px; }
-  tr.ticket-row { cursor: pointer; }
-  tr.ticket-row:hover { background: #f9fafb; }
-  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
-  .badge-2 { background: #dbeafe; color: #1e40af; }
-  .badge-3 { background: #fef3c7; color: #92400e; }
-  .badge-4 { background: #d1fae5; color: #065f46; }
-  .badge-5 { background: #e5e7eb; color: #374151; }
-  .badge-6, .badge-7 { background: #fee2e2; color: #991b1b; }
-  .pager { display: flex; justify-content: center; gap: 8px; margin: 20px 0; }
-  .pager button { padding: 6px 14px; border: 1px solid #d1d5db; background: #fff; border-radius: 6px; cursor: pointer; font-size: 13px; }
-  .pager button:disabled { opacity: 0.4; cursor: not-allowed; }
-  .empty { text-align: center; padding: 60px; color: #9ca3af; }
+  .container { max-width: 1400px; margin: 20px auto; padding: 0 24px; }
+  .meta-bar {
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+    margin-bottom: 12px;
+  }
+  .meta-left { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .total-chip {
+    font-size: 11.5px; font-weight: 600; color: #475569;
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 4px 12px;
+  }
+  .clear-filters { font-size: 11.5px; color: #0369a1; cursor: pointer; font-weight: 500; }
+  .clear-filters:hover { text-decoration: underline; }
+  .perpage-select {
+    display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: #64748b;
+  }
+  .perpage-select select {
+    font-size: 11.5px; padding: 3px 6px; border: 1px solid #e2e8f0; border-radius: 6px; background: #fff; color: #334155;
+  }
 
-  tr.filter-row th { padding: 6px 10px; background: #fff; }
+  .table-wrap { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(15,23,42,0.04); }
+  .table-scroll { overflow-x: auto; }
+  table { width: 100%; min-width: 760px; border-collapse: collapse; }
+  th, td { text-align: left; padding: 11px 14px; font-size: 12.5px; border-bottom: 1px solid #f1f5f9; white-space: nowrap; }
+  th { background: #f8fafc; color: #64748b; font-weight: 700; text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.3px; border-bottom: 1px solid #e2e8f0; }
+  td.col-subject, th.col-subject { white-space: normal; min-width: 280px; }
+  tr.ticket-row { cursor: pointer; transition: background 0.1s; }
+  tr.ticket-row:hover { background: #f8fafc; }
+  tr.ticket-row:hover .subject-text { text-decoration: underline; }
+  td.col-id { font-family: ui-monospace, monospace; font-weight: 700; color: #0f172a; }
+  tr.ticket-row:hover td.col-id { color: #0369a1; }
+
+  .row-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 7px; flex-shrink: 0; }
+  .dot-closed { background: #10b981; }
+  .dot-open { background: #f59e0b; }
+  .subject-cell { display: flex; align-items: center; }
+  .subject-text { font-weight: 600; color: #0f172a; }
+
+  .badge { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 6px; font-size: 10.5px; font-weight: 600; white-space: nowrap; }
+  .badge-closed { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+  .badge-closed .badge-dot { background: #10b981; }
+  .badge-open { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+  .badge-open .badge-dot { background: #f59e0b; }
+  .badge-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .badge-plain { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; padding: 2px 9px; border-radius: 6px; font-size: 10.5px; font-weight: 600; white-space: nowrap; }
+
+  .review-btn {
+    padding: 4px 12px; font-size: 11px; font-weight: 700; color: #0369a1;
+    background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 7px; cursor: pointer;
+  }
+  .review-btn:hover { background: #e0f2fe; }
+
+  .pager-bar {
+    display: flex; align-items: center; justify-content: center; gap: 4px; margin: 18px 0;
+  }
+  .pager-bar button {
+    padding: 6px 12px; border: 1px solid #e2e8f0; background: #fff; color: #334155;
+    border-radius: 7px; cursor: pointer; font-size: 12px; font-weight: 500;
+  }
+  .pager-bar button:hover:not(:disabled) { background: #f8fafc; }
+  .pager-bar button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .pager-bar .page-info { padding: 6px 12px; font-size: 12px; font-weight: 600; color: #1e293b; background: #f1f5f9; border-radius: 7px; }
+  .empty { text-align: center; padding: 60px; color: #94a3b8; font-size: 13px; }
+
+  tr.filter-row th { padding: 6px 10px; background: #fff; border-bottom: 1px solid #e2e8f0; }
   tr.filter-row input, tr.filter-row select {
     width: 100%;
     padding: 5px 8px;
-    border: 1px solid #d1d5db;
-    border-radius: 5px;
-    font-size: 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 11.5px;
     font-weight: 400;
     text-transform: none;
+    background: #f8fafc;
+    color: #1e293b;
   }
-  .clear-filters { font-size: 11px; color: #00AEEF; cursor: pointer; text-decoration: underline; white-space: nowrap; }
+  tr.filter-row input:focus, tr.filter-row select:focus { outline: none; background: #fff; border-color: #0284c7; }
 
   #overlay {
     display: none;
     position: fixed; inset: 0;
-    background: rgba(0,0,0,0.4);
+    background: rgba(15,23,42,0.45);
     z-index: 100;
     align-items: center;
     justify-content: center;
@@ -110,38 +185,39 @@
     max-width: 92vw;
     max-height: 90vh;
     overflow-y: auto;
-    border-radius: 10px;
+    border-radius: 14px;
     padding: 28px 32px;
+    box-shadow: 0 20px 60px rgba(15,23,42,0.25);
   }
-  #panel h2 { margin: 0 0 8px; font-size: 18px; }
-  #panel .close { float: right; cursor: pointer; font-size: 20px; color: #9ca3af; }
+  #panel h2 { margin: 0 0 8px; font-size: 17px; color: #0f172a; }
+  #panel .close { float: right; cursor: pointer; font-size: 20px; color: #94a3b8; }
   .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 20px; font-size: 13px; margin: 16px 0; }
-  .field-grid div span { color: #6b7280; display: block; font-size: 11px; text-transform: uppercase; }
-  .conv { border: 1px solid #f0f0f0; border-radius: 6px; margin-bottom: 8px; background: #fff; }
-  .conv.private { background: #fff7ed; border-color: #fed7aa; }
+  .field-grid div span { color: #94a3b8; display: block; font-size: 10.5px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.3px; }
+  .conv { border: 1px solid #f1f5f9; border-radius: 8px; margin-bottom: 8px; background: #fff; }
+  .conv.private { background: #fffbeb; border-color: #fde68a; }
   .conv-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 14px; cursor: pointer; }
   .conv-header:hover { background: rgba(0,0,0,0.03); }
-  .conv .conv-meta { font-size: 11px; color: #9ca3af; }
-  .conv-chevron { font-size: 10px; color: #9ca3af; transition: transform 0.15s; flex-shrink: 0; }
+  .conv .conv-meta { font-size: 11px; color: #94a3b8; }
+  .conv-chevron { font-size: 10px; color: #94a3b8; transition: transform 0.15s; flex-shrink: 0; }
   .conv.open .conv-chevron { transform: rotate(90deg); }
   .conv .conv-body { font-size: 13px; line-height: 1.6; padding: 0 14px 14px; display: none; }
   .conv.open .conv-body { display: block; }
-  .section-title { font-size: 13px; font-weight: 700; margin: 20px 0 8px; color: #374151; }
+  .section-title { font-size: 12.5px; font-weight: 700; margin: 20px 0 8px; color: #334155; text-transform: uppercase; letter-spacing: 0.3px; }
 
   .chat-thread { display: flex; flex-direction: column; gap: 12px; }
   .chat-turn { display: flex; flex-direction: column; max-width: 70%; }
   .chat-customer { align-items: flex-start; margin-right: auto; }
   .chat-agent { align-items: flex-end; margin-left: auto; }
-  .chat-name { font-size: 11px; font-weight: 600; color: #6b7280; margin-bottom: 3px; }
+  .chat-name { font-size: 11px; font-weight: 600; color: #64748b; margin-bottom: 3px; }
   .chat-bubble { padding: 8px 12px; border-radius: 12px; font-size: 13px; line-height: 1.5; white-space: pre-wrap; }
-  .chat-customer .chat-bubble { background: #dbeafe; color: #1e3a8a; border-bottom-left-radius: 3px; }
-  .chat-agent .chat-bubble { background: #fff; border: 1px solid #e5e7eb; color: #111827; border-bottom-right-radius: 3px; }
-  .chat-ts { font-size: 10px; color: #9ca3af; margin-top: 3px; }
+  .chat-customer .chat-bubble { background: #eff6ff; color: #1e3a8a; border-bottom-left-radius: 3px; }
+  .chat-agent .chat-bubble { background: #fff; border: 1px solid #e2e8f0; color: #1e293b; border-bottom-right-radius: 3px; }
+  .chat-ts { font-size: 10px; color: #adb5bd; margin-top: 3px; }
 
   @media (max-width: 900px) {
     .container { margin: 12px auto; padding: 0 10px; }
     header { padding: 10px 12px; }
-    header input[type="text"] { min-width: 120px; }
+    .search-wrap { min-width: 120px; }
     #panel { padding: 16px; }
   }
 </style>
@@ -149,8 +225,25 @@
 <body>
 
 <header>
-  <h1>📦 Freshdesk Ticket Arşivi</h1>
-  <input type="text" id="q" placeholder="Genel arama (konu, müşteri, şirket, ajan, etiket)..." />
+  <div class="brand">
+    <div class="brand-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+    </div>
+    <div>
+      <div class="brand-title">
+        <h1>Freshdesk</h1>
+        <span class="brand-chip">Arşiv</span>
+      </div>
+      <p class="brand-sub">Kurumsal Destek Kayıt Veritabanı</p>
+    </div>
+  </div>
+
+  <div class="search-wrap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+    <input type="text" id="q" placeholder="Genel arama (konu, müşteri, şirket, ajan, etiket veya ticket #)..." />
+    <span class="kbd-hint">⌘K</span>
+  </div>
+
   <div class="columns-wrap">
     <button class="btn" id="columnsBtn">☰ Sütunlar</button>
     <div id="columnsPanel"></div>
@@ -158,23 +251,40 @@
 </header>
 
 <div class="container">
-  <div class="meta">
-    <span id="meta"></span>
-    <span class="clear-filters" onclick="clearFilters()">tüm filtreleri temizle</span>
+  <div class="meta-bar">
+    <div class="meta-left">
+      <span class="total-chip" id="meta"></span>
+      <span class="clear-filters" onclick="clearFilters()">tüm filtreleri temizle</span>
+    </div>
+    <div class="perpage-select">
+      <span>Sayfa başı:</span>
+      <select id="perPageSelect">
+        <option value="15">15</option>
+        <option value="25" selected>25</option>
+        <option value="50">50</option>
+        <option value="100">100</option>
+      </select>
+    </div>
   </div>
+
   <div class="table-wrap">
-    <table>
-      <thead>
-        <tr id="headerRow"></tr>
-        <tr class="filter-row" id="filterRow"></tr>
-      </thead>
-      <tbody id="rows"></tbody>
-    </table>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr id="headerRow"></tr>
+          <tr class="filter-row" id="filterRow"></tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
   </div>
-  <div class="pager">
-    <button id="prev">← Önceki</button>
-    <span id="pageInfo" style="align-self:center;font-size:13px;color:#6b7280;"></span>
-    <button id="next">Sonraki →</button>
+
+  <div class="pager-bar">
+    <button id="first">« İlk</button>
+    <button id="prev">‹ Önceki</button>
+    <span class="page-info" id="pageInfo"></span>
+    <button id="next">Sonraki ›</button>
+    <button id="last">Son »</button>
   </div>
 </div>
 
@@ -193,16 +303,26 @@ const SOURCE_OPTIONS = [
   ['5', 'Feedback'], ['7', 'Twitter'], ['8', 'Facebook'], ['9', 'Bot'],
 ];
 
+function isClosedStatus(status) { return status === 4 || status === 5; }
+
+function statusBadge(status, label) {
+  const cls = isClosedStatus(status) ? 'badge-closed' : 'badge-open';
+  return `<span class="badge ${cls}"><span class="badge-dot"></span>${label || '-'}</span>`;
+}
+
 // field: backend'e gönderilecek query param adı (metin alanlar için doğrudan, date için _from/_to eklenir)
 const ALL_COLUMNS = [
-  { key: '_id', label: '#', field: 'id', type: 'number', default: true, render: t => t._id },
-  { key: 'subject', label: 'Konu', field: 'subject', type: 'text', default: true, render: t => t.subject || '-' },
+  { key: '_id', label: '#', field: 'id', type: 'number', default: true, render: t => `<span class="col-id">${t._id}</span>` },
+  {
+    key: 'subject', label: 'Konu', field: 'subject', type: 'text', default: true,
+    render: t => `<span class="subject-cell"><span class="row-dot ${isClosedStatus(t.status) ? 'dot-closed' : 'dot-open'}"></span><span class="subject-text">${t.subject || '(konu yok)'}</span></span>`,
+  },
   { key: 'requester_name', label: 'Müşteri', field: 'requester_name', type: 'text', default: true, render: t => t.requester_name || '-' },
   { key: 'requester_email', label: 'E-posta', field: 'requester_email', type: 'text', default: false, render: t => t.requester_email || '-' },
   { key: 'company_name', label: 'Şirket', field: 'company_name', type: 'text', default: true, render: t => t.company_name || '-' },
-  { key: 'status_label', label: 'Durum', field: 'status', type: 'select', options: STATUS_OPTIONS, default: true, render: t => `<span class="badge badge-${t.status}">${t.status_label || '-'}</span>` },
-  { key: 'priority_label', label: 'Öncelik', field: 'priority', type: 'select', options: PRIORITY_OPTIONS, default: false, render: t => t.priority_label || '-' },
-  { key: 'source_label', label: 'Kaynak', field: 'source', type: 'select', options: SOURCE_OPTIONS, default: false, render: t => t.source_label || '-' },
+  { key: 'status_label', label: 'Durum', field: 'status', type: 'select', options: STATUS_OPTIONS, default: true, render: t => statusBadge(t.status, t.status_label) },
+  { key: 'priority_label', label: 'Öncelik', field: 'priority', type: 'select', options: PRIORITY_OPTIONS, default: false, render: t => t.priority_label ? `<span class="badge-plain">${t.priority_label}</span>` : '-' },
+  { key: 'source_label', label: 'Kaynak', field: 'source', type: 'select', options: SOURCE_OPTIONS, default: false, render: t => t.source_label ? `<span class="badge-plain">${t.source_label}</span>` : '-' },
   { key: 'agent_name', label: 'Ajan', field: 'agent_name', type: 'text', default: true, render: t => t.agent_name || '-' },
   { key: 'group_name', label: 'Grup', field: 'group_name', type: 'text', default: false, render: t => t.group_name || '-' },
   { key: 'ticket_type', label: 'Tür', field: 'ticket_type', type: 'text', default: false, render: t => t.ticket_type || '-' },
@@ -213,9 +333,10 @@ const ALL_COLUMNS = [
 ];
 
 const STORAGE_KEY = 'fd_arsiv_columns_v1';
+const PERPAGE_KEY = 'fd_arsiv_perpage_v1';
 let visibleKeys = loadColumnPrefs();
 let page = 1;
-const perPage = 25;
+let perPage = loadPerPagePref();
 
 function loadColumnPrefs() {
   try {
@@ -227,6 +348,11 @@ function loadColumnPrefs() {
 
 function saveColumnPrefs() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(visibleKeys));
+}
+
+function loadPerPagePref() {
+  const saved = Number(localStorage.getItem(PERPAGE_KEY));
+  return [15, 25, 50, 100].includes(saved) ? saved : 25;
 }
 
 function visibleColumns() {
@@ -252,7 +378,7 @@ function initialsAvatar(name, size) {
 }
 
 function badge(status, label) {
-  return `<span class="badge badge-${status}">${label || '-'}</span>`;
+  return statusBadge(status, label);
 }
 
 function sanitizeHtml(html) {
@@ -358,7 +484,7 @@ document.getElementById('columnsPanel').addEventListener('click', (e) => e.stopP
 function renderTableStructure() {
   const cols = visibleColumns();
   const headerRow = document.getElementById('headerRow');
-  headerRow.innerHTML = cols.map(c => `<th>${c.label}</th>`).join('');
+  headerRow.innerHTML = cols.map(c => `<th class="${c.key === 'subject' ? 'col-subject' : ''}">${c.label}</th>`).join('') + '<th style="text-align:right;">İşlem</th>';
 
   const filterRow = document.getElementById('filterRow');
   filterRow.innerHTML = cols.map(c => {
@@ -378,7 +504,7 @@ function renderTableStructure() {
       return `<th><input type="text" inputmode="numeric" data-field="${c.field}" data-type="number" placeholder="Ara..." /></th>`;
     }
     return `<th><input type="text" data-field="${c.field}" data-type="text" placeholder="Ara..." /></th>`;
-  }).join('');
+  }).join('') + '<th></th>';
 
   filterRow.querySelectorAll('input, select').forEach(el => {
     const evt = el.tagName === 'SELECT' ? 'change' : 'input';
@@ -419,23 +545,32 @@ async function load() {
   const cols = visibleColumns();
   const rows = document.getElementById('rows');
   if (!data.results || data.results.length === 0) {
-    rows.innerHTML = `<tr><td colspan="${cols.length}" class="empty">Sonuç bulunamadı.</td></tr>`;
+    rows.innerHTML = `<tr><td colspan="${cols.length + 1}" class="empty">Sonuç bulunamadı.</td></tr>`;
   } else {
     rows.innerHTML = data.results.map(t => `
       <tr class="ticket-row" data-id="${t._id}">
-        ${cols.map(c => `<td>${c.render(t)}</td>`).join('')}
+        ${cols.map(c => `<td class="${c.key === '_id' ? 'col-id' : ''} ${c.key === 'subject' ? 'col-subject' : ''}">${c.render(t)}</td>`).join('')}
+        <td style="text-align:right;"><button class="review-btn" data-id="${t._id}">İncele</button></td>
       </tr>
     `).join('');
   }
 
-  document.getElementById('meta').textContent = `Toplam ${data.total} ticket`;
-  document.getElementById('pageInfo').textContent = `Sayfa ${data.page} / ${Math.max(1, Math.ceil(data.total / perPage))}`;
+  document.getElementById('meta').textContent = `Toplam ${data.total.toLocaleString('tr-TR')} ticket`;
+  const totalPages = Math.max(1, Math.ceil(data.total / perPage));
+  document.getElementById('pageInfo').textContent = `Sayfa ${data.page} / ${totalPages}`;
+  document.getElementById('first').disabled = page <= 1;
   document.getElementById('prev').disabled = page <= 1;
-  document.getElementById('next').disabled = page * perPage >= data.total;
+  document.getElementById('next').disabled = page >= totalPages;
+  document.getElementById('last').disabled = page >= totalPages;
 
   document.querySelectorAll('.ticket-row').forEach(row => {
     row.addEventListener('click', () => openTicket(row.dataset.id));
   });
+  document.querySelectorAll('.review-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => { e.stopPropagation(); openTicket(btn.dataset.id); });
+  });
+
+  window._lastTotalPages = totalPages;
 }
 
 async function openTicket(id) {
@@ -480,7 +615,7 @@ async function openTicket(id) {
     <span class="close" onclick="closeTicket()">✕</span>
     <h2>#${t._id} — ${t.subject || '-'}</h2>
     ${data.createdByName ? `<div style="display:flex;align-items:center;gap:6px;color:#6b7280;font-size:12px;margin-bottom:6px;">${initialsAvatar(data.createdByName)} Created by ${data.createdByName}</div>` : ''}
-    ${badge(t.status, t.status_label)} ${badge(0, t.priority_label)} ${badge(0, t.source_label)}
+    ${badge(t.status, t.status_label)} ${t.priority_label ? `<span class="badge-plain">${t.priority_label}</span>` : ''} ${t.source_label ? `<span class="badge-plain">${t.source_label}</span>` : ''}
 
     <div class="field-grid">
       <div><span>Müşteri</span>${t.requester_name || '-'} ${t.requester_email ? '(' + t.requester_email + ')' : ''}</div>
@@ -551,8 +686,26 @@ document.getElementById('overlay').addEventListener('click', (e) => {
 document.getElementById('q').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') { page = 1; load(); }
 });
+document.addEventListener('keydown', (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+    e.preventDefault();
+    document.getElementById('q').focus();
+    document.getElementById('q').select();
+  }
+});
+document.getElementById('first').addEventListener('click', () => { page = 1; load(); });
 document.getElementById('prev').addEventListener('click', () => { page--; load(); });
 document.getElementById('next').addEventListener('click', () => { page++; load(); });
+document.getElementById('last').addEventListener('click', () => { page = window._lastTotalPages || page; load(); });
+
+const perPageSelect = document.getElementById('perPageSelect');
+perPageSelect.value = String(perPage);
+perPageSelect.addEventListener('change', () => {
+  perPage = Number(perPageSelect.value);
+  localStorage.setItem(PERPAGE_KEY, String(perPage));
+  page = 1;
+  load();
+});
 
 renderColumnsPanel();
 renderTableStructure();
