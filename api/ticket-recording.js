@@ -1,6 +1,7 @@
 import { getDb } from './_db.js';
 import { getContainerClient, mintReadSas, downloadRangeBuffer } from './_azure.js';
 import { estimateMp3DurationSeconds, parseCallDurationSeconds } from './_mp3duration.js';
+import { isMissedCallEvent } from './_missed_call.js';
 
 const BLOB_ROOT = 'apsiyonbilisim.bulutsantralim.com';
 const TZ_OFFSET_MS = 3 * 60 * 60 * 1000; // Türkiye: UTC+3, DST yok
@@ -56,14 +57,6 @@ function dayKey(date) {
   const m = String(local.getUTCMonth() + 1).padStart(2, '0');
   const d = String(local.getUTCDate()).padStart(2, '0');
   return `${y}/${m}/${d}`;
-}
-
-// Cevapsız/terk edilmiş/sesli mesaj bırakılan çağrılarda hiçbir zaman kayıt
-// olmaz — bu tür olaylar için arama bile yapmıyoruz.
-const MISSED_CALL_RE = /cevaps[ıi]z|terk edilmi[şs]|unanswered|missed\s*call|abandoned|bırakılan sesli mesaj|voicemail/i;
-
-function isMissedCallEvent(text) {
-  return MISSED_CALL_RE.test(text || '');
 }
 
 // Freshcaller'ın çağrı özetini yazdığı not — "▶ Play call" butonunun orijinal

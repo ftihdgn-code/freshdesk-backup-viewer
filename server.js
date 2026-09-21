@@ -6,6 +6,7 @@ import ticketsHandler from './api/tickets.js';
 import ticketHandler from './api/ticket.js';
 import recordingSasHandler from './api/recording-sas.js';
 import ticketRecordingHandler from './api/ticket-recording.js';
+import statsHandler from './api/stats.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -36,6 +37,7 @@ app.get('/api/tickets', ticketsHandler);
 app.get('/api/ticket', ticketHandler);
 app.get('/api/recording-sas', recordingSasHandler);
 app.get('/api/ticket-recording', ticketRecordingHandler);
+app.get('/api/stats', statsHandler);
 
 if (MEDIA_ORIGIN) {
   app.use('/media', (req, res) => {

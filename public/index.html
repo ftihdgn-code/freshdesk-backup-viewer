@@ -180,6 +180,7 @@
   }
   #overlay.visible { display: flex; }
   #panel {
+    position: relative;
     background: #fff;
     width: 1000px;
     max-width: 92vw;
@@ -189,20 +190,116 @@
     padding: 28px 32px;
     box-shadow: 0 20px 60px rgba(15,23,42,0.25);
   }
-  #panel h2 { margin: 0 0 8px; font-size: 17px; color: #0f172a; }
-  #panel .close { float: right; cursor: pointer; font-size: 20px; color: #94a3b8; }
-  .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 20px; font-size: 13px; margin: 16px 0; }
-  .field-grid div span { color: #94a3b8; display: block; font-size: 10.5px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.3px; }
-  .conv { border: 1px solid #f1f5f9; border-radius: 8px; margin-bottom: 8px; background: #fff; }
-  .conv.private { background: #fffbeb; border-color: #fde68a; }
-  .conv-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 14px; cursor: pointer; }
-  .conv-header:hover { background: rgba(0,0,0,0.03); }
-  .conv .conv-meta { font-size: 11px; color: #94a3b8; }
-  .conv-chevron { font-size: 10px; color: #94a3b8; transition: transform 0.15s; flex-shrink: 0; }
-  .conv.open .conv-chevron { transform: rotate(90deg); }
-  .conv .conv-body { font-size: 13px; line-height: 1.6; padding: 0 14px 14px; display: none; }
-  .conv.open .conv-body { display: block; }
-  .section-title { font-size: 12.5px; font-weight: 700; margin: 20px 0 8px; color: #334155; text-transform: uppercase; letter-spacing: 0.3px; }
+  #panel .close { position: absolute; top: 18px; right: 20px; cursor: pointer; font-size: 20px; color: #94a3b8; z-index: 1; }
+  #panel .close:hover { color: #475569; }
+
+  /* Ticket detail header (mirrors the Zendesk app's modal.html) */
+  .th-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 18px; padding-right: 24px; }
+  .th-header-main { display: flex; align-items: flex-start; gap: 12px; min-width: 0; }
+  .th-icon {
+    width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+    background: #fef3c7; border: 1px solid #fde68a; color: #b45309;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .th-icon svg { width: 18px; height: 18px; }
+  .th-header h1 { font-size: 16px; font-weight: 700; color: #0f172a; line-height: 1.35; margin: 0 0 6px; }
+  .th-badges { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
+  .th-actions { flex-shrink: 0; }
+  .transcript-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 6px 11px; border-radius: 8px; border: 1px solid #e2e8f0; background: #f8fafc;
+    color: #475569; font-size: 11.5px; font-weight: 600; cursor: pointer;
+  }
+  .transcript-btn:hover { background: #f1f5f9; }
+  .transcript-btn svg { width: 12px; height: 12px; }
+  .created-by { display: flex; align-items: center; gap: 6px; color: #64748b; font-size: 11.5px; margin-top: 6px; }
+
+  .th-badges .badge, .th-badges .badge-plain { font-size: 10.5px; }
+  .badge-id { color: #94a3b8; font-weight: 500; background: transparent !important; border: none !important; padding: 0 !important; }
+  .badge svg { width: 10px; height: 10px; }
+  .badge-channel-1 { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+  .badge-channel-2 { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+  .badge-channel-3 { background: #f0f9ff; color: #0369a1; border: 1px solid #bae6fd; }
+  .badge-channel-4 { background: #faf5ff; color: #7e22ce; border: 1px solid #e9d5ff; }
+  .badge-channel-5 { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+  .badge-channel-7 { background: #f0f9ff; color: #0284c7; border: 1px solid #bae6fd; }
+  .badge-channel-8 { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+  .badge-channel-9 { background: #eef2ff; color: #4338ca; border: 1px solid #c7d2fe; }
+
+  /* Ana Bilgiler / Özel Alanlar cards */
+  .meta-grid-popup { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 18px; }
+  @media (min-width: 640px) { .meta-grid-popup { grid-template-columns: 3fr 2fr; } }
+  .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 16px; }
+  .card-head {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px;
+    color: #64748b; padding-bottom: 9px; margin-bottom: 11px; border-bottom: 1px solid #f1f5f9;
+  }
+  .card-head-icon { display: flex; align-items: center; gap: 5px; }
+  .card-head-icon svg { width: 13px; height: 13px; color: #94a3b8; flex-shrink: 0; }
+  .card-head-sub { font-size: 10px; font-weight: 500; color: #94a3b8; text-transform: none; letter-spacing: normal; }
+  .card-head .count-chip {
+    font-size: 10px; font-weight: 600; color: #0369a1; background: #f0f9ff;
+    padding: 1px 6px; border-radius: 5px; text-transform: none; letter-spacing: normal;
+  }
+
+  .field-list { display: grid; grid-template-columns: 1fr 1fr; gap: 11px 16px; }
+  @media (min-width: 460px) { .field-list { grid-template-columns: repeat(3, 1fr); } }
+  .field-item { min-width: 0; }
+  .field-label { display: block; font-size: 10px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 2px; }
+  .field-value { font-size: 12.5px; color: #1e293b; font-weight: 500; word-break: break-word; }
+  .field-value.mono { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 11.5px; color: #475569; }
+  .field-with-avatar { display: flex; align-items: center; gap: 6px; }
+  .field-chip { display: inline-flex; font-size: 11.5px; font-weight: 600; color: #92400e; background: #fffbeb; border: 1px solid #fde68a; border-radius: 5px; padding: 2px 8px; }
+
+  .tags-row { grid-column: 1 / -1; padding-top: 9px; margin-top: 2px; border-top: 1px solid #f1f5f9; display: flex; flex-wrap: wrap; gap: 5px; }
+  .tag-chip { font-size: 10.5px; font-weight: 500; color: #475569; background: #f1f5f9; border-radius: 5px; padding: 2px 7px; }
+
+  .cf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .cf-item { background: #f8fafc; border: 1px solid #f1f5f9; border-radius: 7px; padding: 6px 8px; min-width: 0; }
+  .cf-key { display: block; font-size: 9.5px; font-weight: 600; color: #94a3b8; font-family: ui-monospace, monospace; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cf-val { font-size: 11.5px; font-weight: 600; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cf-empty { font-size: 11.5px; color: #94a3b8; padding: 4px 0; }
+
+  .section-title { font-size: 12px; font-weight: 700; margin: 20px 0 9px; color: #334155; text-transform: uppercase; letter-spacing: 0.3px; display: flex; align-items: center; gap: 6px; }
+  .section-title .dot { width: 7px; height: 7px; border-radius: 50%; background: #0369a1; display: inline-block; }
+  .section-title .count { font-weight: 500; color: #94a3b8; text-transform: none; letter-spacing: normal; }
+  .section-title-row { display: flex; align-items: center; justify-content: space-between; margin: 20px 0 9px; }
+  .section-title-row .section-title { margin: 0; }
+  .expand-all-btn { font-size: 11px; font-weight: 600; color: #0369a1; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 7px; padding: 4px 11px; cursor: pointer; }
+  .expand-all-btn:hover { background: #e0f2fe; }
+
+  .conv-body-full { border: 1px solid #e2e8f0; border-radius: 10px; padding: 13px 15px; font-size: 13px; line-height: 1.6; overflow-x: auto; background: #fff; }
+
+  .conv-item { border-radius: 10px; padding: 11px 15px; margin-bottom: 8px; font-size: 13px; line-height: 1.6; overflow-x: auto; background: #fff; border: 1px solid #e2e8f0; }
+  .conv-item.conv-private { background: #fffbeb; border-color: #fde68a; }
+  .conv-item.conv-has-rec { border-color: #f59e0b; border-width: 1.5px; box-shadow: 0 1px 3px rgba(245,158,11,0.12); }
+  .conv-meta-row { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .conv-item.open .conv-meta-row { margin-bottom: 7px; }
+  .conv-tag { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; padding: 2px 6px; border-radius: 5px; }
+  .conv-tag-customer { background: #eff6ff; color: #1d4ed8; }
+  .conv-tag-agent { background: #f1f5f9; color: #475569; }
+  .conv-tag-private { background: #fef3c7; color: #92400e; }
+  .conv-time { font-size: 11px; color: #94a3b8; }
+  .conv-chevron-icon { width: 12px; height: 12px; color: #94a3b8; transition: transform 0.15s; margin-left: auto; flex-shrink: 0; }
+  .conv-item.open .conv-chevron-icon { transform: rotate(90deg); }
+  .conv-body, .conv-rec-slot { display: none; }
+  .conv-item.open .conv-body, .conv-item.open .conv-rec-slot { display: block; }
+
+  .rec-player { margin-top: 8px; background: linear-gradient(135deg,#1e293b,#0f172a); border-radius: 10px; padding: 10px 12px; color: #fff; }
+  .rec-player-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+  .rec-player-label { display: flex; align-items: center; gap: 6px; font-size: 10.5px; color: #cbd5e1; min-width: 0; }
+  .rec-player-label .live-dot { width: 6px; height: 6px; border-radius: 50%; background: #34d399; flex-shrink: 0; }
+  .rec-player-label .blob-name { font-family: ui-monospace, monospace; color: #e2e8f0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rec-ambiguous { font-size: 10.5px; color: #fbbf24; margin-bottom: 6px; }
+  audio.rec-audio { width: 100%; height: 32px; }
+
+  .att-grid { display: grid; grid-template-columns: 1fr; gap: 6px; }
+  .att-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; }
+  .att-item a { color: #0369a1; font-size: 12px; font-weight: 600; text-decoration: none; }
+  .att-item a:hover { text-decoration: underline; }
+  .att-size { color: #94a3b8; font-size: 11px; white-space: nowrap; }
+  .empty-note { color: #94a3b8; font-size: 12.5px; padding: 6px 0; }
 
   .chat-thread { display: flex; flex-direction: column; gap: 14px; }
   .chat-row { display: flex; align-items: flex-end; gap: 8px; max-width: 74%; }
@@ -239,6 +336,22 @@
   .chat-date-divider { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
   .chat-date-divider::before, .chat-date-divider::after { content: ''; flex: 1; height: 1px; background: #e2e8f0; }
   .chat-date-divider span { font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap; }
+
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .stat-card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 13px 15px;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    box-shadow: 0 1px 3px rgba(15,23,42,0.04);
+  }
+  .stat-label { font-size: 10.5px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.3px; }
+  .stat-value { font-size: 21px; font-weight: 700; color: #0f172a; margin-top: 3px; line-height: 1.2; }
+  .stat-sub { font-size: 10.5px; font-weight: 600; margin-left: 7px; }
+  .stat-icon { width: 36px; height: 36px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .stat-icon svg { width: 17px; height: 17px; }
+  .stat-icon-blue { background: #eff6ff; color: #2563eb; }
+  .stat-icon-emerald { background: #ecfdf5; color: #059669; }
+  .stat-icon-purple { background: #faf5ff; color: #9333ea; }
+  .stat-skel { color: #cbd5e1; }
 
   @media (max-width: 900px) {
     .container { margin: 12px auto; padding: 0 10px; }
@@ -277,6 +390,21 @@
 </header>
 
 <div class="container">
+  <div class="stats-grid" id="statsGrid">
+    <div class="stat-card">
+      <div><span class="stat-label">Toplam Arşiv</span><div class="stat-value stat-skel" data-stat="total">—</div></div>
+      <div class="stat-icon stat-icon-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg></div>
+    </div>
+    <div class="stat-card">
+      <div><span class="stat-label">Kalıcı Çözülenler</span><div class="stat-value stat-skel" data-stat="closed">—</div></div>
+      <div class="stat-icon stat-icon-emerald"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+    </div>
+    <div class="stat-card">
+      <div><span class="stat-label">Kayıtlı Müşteri Sayısı</span><div class="stat-value stat-skel" data-stat="contacts">—</div></div>
+      <div class="stat-icon stat-icon-purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg></div>
+    </div>
+  </div>
+
   <div class="meta-bar">
     <div class="meta-left">
       <span class="total-chip" id="meta"></span>
@@ -401,10 +529,6 @@ function initialsAvatar(name, size) {
   const color = AVATAR_COLORS[hash % AVATAR_COLORS.length];
   const px = size || 22;
   return `<span style="display:inline-flex;align-items:center;justify-content:center;width:${px}px;height:${px}px;border-radius:50%;background:${color};color:#fff;font-size:${Math.round(px*0.42)}px;font-weight:600;flex-shrink:0;vertical-align:middle;">${initials}</span>`;
-}
-
-function badge(status, label) {
-  return statusBadge(status, label);
 }
 
 function sanitizeHtml(html) {
@@ -639,13 +763,44 @@ async function load() {
   window._lastTotalPages = totalPages;
 }
 
+const TICKET_ICON_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>`;
+const INFO_ICON_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`;
+const TAG_ICON_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>`;
+const DOWNLOAD_ICON_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>`;
+
+// Kaynak (source) numaraları Freshdesk'in sabit enum'u: 1 E-posta, 2 Portal, 3 Telefon,
+// 4 Chat, 5 Feedback, 7 Twitter, 8 Facebook, 9 Bot — her biri için ayrı ikon/renk.
+const CHANNEL_ICONS = {
+  1: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>`,
+  2: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3.6 9h16.8M3.6 15h16.8M12 3a15 15 0 010 18M12 3a15 15 0 000 18"/></svg>`,
+  3: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>`,
+  4: TICKET_ICON_SVG,
+  5: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11.48 3.5a.56.56 0 011.04 0l2.13 5.11c.07.18.24.3.43.35l5.52.44c.5.04.7.66.32.99l-4.2 3.6a.56.56 0 00-.19.56l1.29 5.39a.56.56 0 01-.84.6l-4.73-2.88a.56.56 0 00-.58 0L6.98 20.54a.56.56 0 01-.84-.6l1.29-5.39a.56.56 0 00-.19-.56l-4.2-3.6a.56.56 0 01.32-.99l5.52-.44c.19-.05.36-.17.43-.35z"/></svg>`,
+  7: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z"/></svg>`,
+  8: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 2h-2.5A5.5 5.5 0 009 7.5V10H6.5v4H9v8h4v-8h3l.5-4H13V8a1 1 0 011-1h3z"/></svg>`,
+  9: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M2 14h2M20 14h2M15 13v2M9 13v2"/></svg>`,
+};
+function channelBadgeHtml(source, label) {
+  const icon = CHANNEL_ICONS[source] || '';
+  return `<span class="badge badge-channel-${source || 0}">${icon}${label}</span>`;
+}
+
+function stripToText(raw) {
+  if (!raw) return '';
+  if (!looksLikeHtml(raw)) return raw;
+  const div = document.createElement('div');
+  div.innerHTML = raw;
+  return div.textContent || '';
+}
+
 async function openTicket(id) {
   const res = await fetch('/api/ticket?id=' + id);
   const data = await res.json();
   if (data.error) { alert(data.error); return; }
 
   const t = data.ticket;
-  const cf = Object.entries(t.custom_fields || {}).filter(([,v]) => v !== null && v !== '' && v !== false);
+  const isClosed = isClosedStatus(t.status);
+  const customFields = Object.entries(t.custom_fields || {}).filter(([,v]) => v !== null && v !== undefined && v !== '');
 
   // Freshcaller'ın attığı saf sistem metadata notu ("created_by: ...\nfreshcaller: true\ntime: ...")
   // insana hiçbir bilgi vermiyor — gösterilecek konuşma listesinden çıkarıyoruz
@@ -655,69 +810,196 @@ async function openTicket(id) {
     return !(/created_by:\s*\d+/i.test(raw) && /freshcaller:\s*true/i.test(raw));
   });
 
-  const convHtml = visibleConversations.map((c, i) => {
+  const convHtml = visibleConversations.map((c) => {
     const raw = c.body || c.body_text || '';
     const body = looksLikeHtml(raw) ? sanitizeHtml(raw) : renderChatText(raw, t.requester_name);
+    const tagClass = c.private ? 'conv-tag-private' : (c.incoming ? 'conv-tag-customer' : 'conv-tag-agent');
+    const tagLabel = c.private ? 'Dahili Not' : (c.incoming ? 'Müşteri' : 'Temsilci');
     return `
-    <div class="conv ${c.private ? 'private' : ''}">
-      <div class="conv-header" onclick="toggleConv(${i})">
-        <span class="conv-meta">${c.incoming ? 'Gelen' : 'Giden'} ${c.private ? '· Dahili not' : ''} · ${fmtDate(c.created_at)}</span>
-        <span class="conv-chevron">▶</span>
+    <div class="conv-item ${c.private ? 'conv-private' : ''}" data-conv-id="${c._id}">
+      <div class="conv-meta-row" onclick="toggleConvItem(this)">
+        <span class="conv-tag ${tagClass}">${tagLabel}</span>
+        <span class="conv-time">${fmtDate(c.created_at)}</span>
+        <svg class="conv-chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
       </div>
-      <div id="rec_c${c._id}"></div>
       <div class="conv-body">${body}</div>
+      <div class="conv-rec-slot" id="rec_c${c._id}"></div>
     </div>`;
-  }).join('') || '<p style="color:#9ca3af;font-size:13px;">Konuşma kaydı yok.</p>';
+  }).join('') || '<p class="empty-note">Konuşma kaydı yok.</p>';
 
   const attHtml = data.attachments.length
-    ? '<ul>' + data.attachments.map(a => {
-        const size = `(${Math.round((a.size||0)/1024)} KB)`;
-        if (!a.attachment_url) return `<li style="color:#9ca3af;">${a.name} ${size} — içerik mevcut değil</li>`;
-        return `<li><a href="${a.attachment_url}" target="_blank" rel="noopener">${a.name}</a> ${size}</li>`;
-      }).join('') + '</ul>'
+    ? `<div class="att-grid">${data.attachments.map(a => {
+        const size = `${Math.round((a.size || 0) / 1024)} KB`;
+        if (!a.attachment_url) return `<div class="att-item"><span style="color:#94a3b8;">${a.name}</span><span class="att-size">${size} — içerik mevcut değil</span></div>`;
+        return `<div class="att-item"><a href="${a.attachment_url}" target="_blank" rel="noopener">${a.name}</a><span class="att-size">${size}</span></div>`;
+      }).join('')}</div>`
     : '';
+
+  const createdByRow = data.createdByName
+    ? `<div class="created-by">${initialsAvatar(data.createdByName, 20)} Oluşturan: ${data.createdByName}</div>`
+    : '';
+
+  const mainCard = `
+    <div class="card">
+      <div class="card-head">
+        <span class="card-head-icon">${INFO_ICON_SVG}Ana Bilgiler</span>
+        <span class="card-head-sub">Son Güncelleme: ${fmtDate(t.updated_at)}</span>
+      </div>
+      <div class="field-list">
+        <div class="field-item">
+          <span class="field-label">Müşteri</span>
+          <div class="field-with-avatar">
+            ${initialsAvatar(t.requester_name || t.requester_email || '?', 20)}
+            <span class="field-value">${t.requester_name || t.requester_email || '-'}</span>
+          </div>
+        </div>
+        <div class="field-item">
+          <span class="field-label">Şirket</span>
+          <span class="field-value">${t.company_name || '— (Belirtilmemiş)'}</span>
+        </div>
+        <div class="field-item">
+          <span class="field-label">Ajan</span>
+          <div class="field-with-avatar">
+            ${t.agent_name ? initialsAvatar(t.agent_name, 20) : ''}
+            <span class="field-value">${t.agent_name || '-'}</span>
+          </div>
+        </div>
+        <div class="field-item">
+          <span class="field-label">Grup</span>
+          ${t.group_name ? `<span class="field-chip">${t.group_name}</span>` : '<span class="field-value">-</span>'}
+        </div>
+        <div class="field-item">
+          <span class="field-label">Tür</span>
+          <span class="field-value">${t.ticket_type || '-'}</span>
+        </div>
+        <div class="field-item">
+          <span class="field-label">Oluşturulma</span>
+          <span class="field-value mono">${fmtDate(t.created_at)}</span>
+        </div>
+        ${(t.tags || []).length ? `<div class="tags-row">${t.tags.map(tag => `<span class="tag-chip">${tag}</span>`).join('')}</div>` : ''}
+      </div>
+    </div>
+  `;
+
+  const cfCard = `
+    <div class="card">
+      <div class="card-head">
+        <span class="card-head-icon">${TAG_ICON_SVG}Özel Alanlar</span>
+        ${customFields.length ? `<span class="count-chip">${customFields.length} Parametre</span>` : ''}
+      </div>
+      ${customFields.length ? `
+        <div class="cf-grid">
+          ${customFields.map(([k, v]) => `
+            <div class="cf-item">
+              <span class="cf-key" title="${k}">${k}</span>
+              <span class="cf-val" title="${v}">${typeof v === 'boolean' ? (v ? 'Evet' : 'Hayır') : v}</span>
+            </div>
+          `).join('')}
+        </div>
+      ` : '<div class="cf-empty">Özel alan yok.</div>'}
+    </div>
+  `;
+
+  const skipFirstMessage = t.source === 3;
 
   document.getElementById('panel').innerHTML = `
     <span class="close" onclick="closeTicket()">✕</span>
-    <h2>#${t._id} — ${t.subject || '-'}</h2>
-    ${data.createdByName ? `<div style="display:flex;align-items:center;gap:6px;color:#6b7280;font-size:12px;margin-bottom:6px;">${initialsAvatar(data.createdByName)} Created by ${data.createdByName}</div>` : ''}
-    ${badge(t.status, t.status_label)} ${t.priority_label ? `<span class="badge-plain">${t.priority_label}</span>` : ''} ${t.source_label ? `<span class="badge-plain">${t.source_label}</span>` : ''}
-
-    <div class="field-grid">
-      <div><span>Müşteri</span>${t.requester_name || '-'} ${t.requester_email ? '(' + t.requester_email + ')' : ''}</div>
-      <div><span>Şirket</span>${t.company_name || '-'}</div>
-      <div><span>Ajan</span>${t.agent_name || '-'}</div>
-      <div><span>Grup</span>${t.group_name || '-'}</div>
-      <div><span>Oluşturulma</span>${fmtDate(t.created_at)}</div>
-      <div><span>Güncellenme</span>${fmtDate(t.updated_at)}</div>
-      <div><span>Etiketler</span>${(t.tags || []).join(', ') || '-'}</div>
-      <div><span>Tür</span>${t.ticket_type || '-'}</div>
+    <div class="th-header">
+      <div class="th-header-main">
+        <div class="th-icon">${TICKET_ICON_SVG}</div>
+        <div>
+          <h1>#${t._id} — ${t.subject || '(konu yok)'}</h1>
+          <div class="th-badges">
+            ${statusBadge(t.status, t.status_label)}
+            ${t.priority_label ? `<span class="badge-plain">${t.priority_label}</span>` : ''}
+            ${t.source_label ? channelBadgeHtml(t.source, t.source_label) : ''}
+            <span class="badge badge-id">ID: #${t._id}</span>
+          </div>
+          ${createdByRow}
+        </div>
+      </div>
+      <div class="th-actions">
+        <button class="transcript-btn" id="transcriptBtn" type="button">${DOWNLOAD_ICON_SVG}Transkript</button>
+      </div>
     </div>
 
-    ${cf.length ? '<div class="section-title">Özel Alanlar</div><div class="field-grid">' + cf.map(([k,v]) => `<div><span>${k}</span>${v}</div>`).join('') + '</div>' : ''}
+    <div class="meta-grid-popup">
+      ${mainCard}
+      ${cfCard}
+    </div>
 
     <div id="rec_ticket_level"></div>
 
-    ${t.source === 3 ? '' : `
-    <div class="section-title">İlk mesaj</div>
-    <div class="conv-body" style="display:block">${looksLikeHtml(t.description) ? sanitizeHtml(t.description || '') : renderChatText(t.description || '', t.requester_name)}</div>
+    ${skipFirstMessage ? '' : `
+      <div class="section-title"><span class="dot"></span>İlk Mesaj</div>
+      <div class="conv-body-full">${looksLikeHtml(t.description) ? sanitizeHtml(t.description || '') : renderChatText(t.description || '', t.requester_name)}</div>
     `}
 
-    <div class="section-title">Konuşmalar (${visibleConversations.length})</div>
+    <div class="section-title-row">
+      <div class="section-title"><span class="dot"></span>Konuşmalar &amp; Notlar <span class="count">(${visibleConversations.length})</span></div>
+      ${visibleConversations.length ? `<button class="expand-all-btn" id="expandAllBtn" onclick="toggleAllConvItems()" type="button">Tümünü Göster</button>` : ''}
+    </div>
     ${convHtml}
 
-    ${attHtml ? '<div class="section-title">Ekler</div>' + attHtml : ''}
+    ${attHtml ? `<div class="section-title"><span class="dot"></span>Ekler <span class="count">(${data.attachments.length})</span></div>${attHtml}` : ''}
   `;
   document.getElementById('overlay').classList.add('visible');
+
+  const transcriptBtn = document.getElementById('transcriptBtn');
+  if (transcriptBtn) {
+    transcriptBtn.addEventListener('click', () => downloadTranscript(t, visibleConversations, customFields, data.createdByName));
+  }
 
   if (t.source === 3) loadRecordings(t._id);
 }
 
-function renderRecPlayer(url, ambiguous) {
+function downloadTranscript(t, visibleConvs, customFields, createdByName) {
+  const lines = [];
+  lines.push(`#${t._id} — ${t.subject || '(konu yok)'}`);
+  lines.push(`Durum: ${t.status_label || '-'}  |  Öncelik: ${t.priority_label || '-'}  |  Kaynak: ${t.source_label || '-'}`);
+  lines.push(`Müşteri: ${t.requester_name || '-'} (${t.requester_email || '-'})`);
+  lines.push(`Şirket: ${t.company_name || '-'}  |  Ajan: ${t.agent_name || '-'}  |  Grup: ${t.group_name || '-'}`);
+  lines.push(`Oluşturulma: ${fmtDate(t.created_at)}  |  Güncellenme: ${fmtDate(t.updated_at)}`);
+  if (createdByName) lines.push(`Oluşturan: ${createdByName}`);
+  if ((t.tags || []).length) lines.push(`Etiketler: ${t.tags.join(', ')}`);
+
+  if (customFields.length) {
+    lines.push('', 'Özel Alanlar:');
+    customFields.forEach(([k, v]) => lines.push(`  ${k}: ${typeof v === 'boolean' ? (v ? 'Evet' : 'Hayır') : v}`));
+  }
+
+  lines.push('', '--- Konuşmalar & Notlar ---');
+  if (t.source !== 3 && t.description) {
+    lines.push('', `[İlk Mesaj]`, stripToText(t.description));
+  }
+  visibleConvs.forEach((c) => {
+    const who = c.private ? 'Dahili Not' : (c.incoming ? 'Müşteri' : 'Temsilci');
+    lines.push('', `[${who} · ${fmtDate(c.created_at)}]`, stripToText(c.body || c.body_text || ''));
+  });
+
+  const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `ticket-${t._id}-transkript.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function renderRecPlayer(url, ambiguous, blobName) {
   const label = ambiguous
-    ? '<div style="font-size:11px;color:#b45309;margin-bottom:2px;">⚠ Bu gün için birden fazla arama var, hangisi olduğu kesin değil:</div>'
+    ? '<div class="rec-ambiguous">⚠ Bu gün için birden fazla arama var, hangisi olduğu kesin değil:</div>'
     : '';
-  return `<div style="padding:6px 14px;">${label}<audio controls preload="none" src="${url}" style="width:100%;max-width:420px;"></audio></div>`;
+  return `
+    <div class="rec-player">
+      <div class="rec-player-top">
+        <span class="rec-player-label"><span class="live-dot"></span>Görüşme Kaydı<span class="blob-name">${(blobName || '').split('/').pop()}</span></span>
+      </div>
+      ${label}
+      <audio class="rec-audio" controls preload="none" src="${url}"></audio>
+    </div>`;
 }
 
 async function loadRecordings(id) {
@@ -729,7 +1011,11 @@ async function loadRecordings(id) {
     data.recordings.forEach((rec) => {
       const targetId = rec.conversation_id ? `rec_c${rec.conversation_id}` : 'rec_ticket_level';
       const el = document.getElementById(targetId);
-      if (el) el.insertAdjacentHTML('beforeend', renderRecPlayer(rec.url, rec.ambiguous));
+      if (el) {
+        el.insertAdjacentHTML('beforeend', renderRecPlayer(rec.url, rec.ambiguous, rec.blob));
+        const convItem = el.closest('.conv-item');
+        if (convItem) convItem.classList.add('conv-has-rec');
+      }
     });
   } catch (e) {
     // sessiz geç — ses kaydı arayüzü opsiyonel bir katkı, ticket görüntülemeyi bloklamamalı
@@ -740,9 +1026,25 @@ function closeTicket() {
   document.getElementById('overlay').classList.remove('visible');
 }
 
-function toggleConv(i) {
-  const el = document.querySelectorAll('#panel .conv')[i];
-  if (el) el.classList.toggle('open');
+function toggleConvItem(headerEl) {
+  const item = headerEl.closest('.conv-item');
+  item.classList.toggle('open');
+  syncExpandAllLabel();
+}
+
+function toggleAllConvItems() {
+  const items = document.querySelectorAll('#panel .conv-item');
+  const allOpen = items.length > 0 && [...items].every((i) => i.classList.contains('open'));
+  items.forEach((i) => i.classList.toggle('open', !allOpen));
+  syncExpandAllLabel();
+}
+
+function syncExpandAllLabel() {
+  const btn = document.getElementById('expandAllBtn');
+  if (!btn) return;
+  const items = document.querySelectorAll('#panel .conv-item');
+  const allOpen = items.length > 0 && [...items].every((i) => i.classList.contains('open'));
+  btn.textContent = allOpen ? 'Tümünü Daralt' : 'Tümünü Göster';
 }
 
 document.getElementById('overlay').addEventListener('click', (e) => {
@@ -751,6 +1053,10 @@ document.getElementById('overlay').addEventListener('click', (e) => {
 
 document.getElementById('q').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') { page = 1; load(); }
+});
+document.getElementById('q').addEventListener('input', () => {
+  clearTimeout(window._qDebounce);
+  window._qDebounce = setTimeout(() => { page = 1; load(); }, 300);
 });
 document.addEventListener('keydown', (e) => {
   if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
@@ -773,6 +1079,26 @@ perPageSelect.addEventListener('change', () => {
   load();
 });
 
+async function loadStats() {
+  try {
+    const res = await fetch('/api/stats');
+    const data = await res.json();
+    if (!res.ok || data.error) return; // istatistik kartları opsiyonel bir katkı, sayfayı bloklamamalı
+
+    const setStat = (key, value) => {
+      const el = document.querySelector(`[data-stat="${key}"]`);
+      if (el) { el.textContent = value; el.classList.remove('stat-skel'); }
+    };
+    setStat('total', data.total.toLocaleString('tr-TR'));
+    setStat('closed', data.closed.toLocaleString('tr-TR'));
+    setStat('contacts', data.contacts.toLocaleString('tr-TR'));
+
+    document.querySelector('[data-stat="closed"]').insertAdjacentHTML('beforeend', `<span class="stat-sub" style="color:#059669;">%${data.closedPct}</span>`);
+  } catch (e) {
+    // sessiz geç
+  }
+}
+
 renderColumnsPanel();
 renderTableStructure();
 
@@ -781,6 +1107,7 @@ const qParam = urlParams.get('q');
 if (qParam) document.getElementById('q').value = qParam;
 
 load();
+loadStats();
 </script>
 
 </body>
