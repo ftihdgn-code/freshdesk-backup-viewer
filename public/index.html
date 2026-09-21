@@ -204,15 +204,41 @@
   .conv.open .conv-body { display: block; }
   .section-title { font-size: 12.5px; font-weight: 700; margin: 20px 0 8px; color: #334155; text-transform: uppercase; letter-spacing: 0.3px; }
 
-  .chat-thread { display: flex; flex-direction: column; gap: 12px; }
-  .chat-turn { display: flex; flex-direction: column; max-width: 70%; }
-  .chat-customer { align-items: flex-start; margin-right: auto; }
-  .chat-agent { align-items: flex-end; margin-left: auto; }
-  .chat-name { font-size: 11px; font-weight: 600; color: #64748b; margin-bottom: 3px; }
-  .chat-bubble { padding: 8px 12px; border-radius: 12px; font-size: 13px; line-height: 1.5; white-space: pre-wrap; }
-  .chat-customer .chat-bubble { background: #eff6ff; color: #1e3a8a; border-bottom-left-radius: 3px; }
-  .chat-agent .chat-bubble { background: #fff; border: 1px solid #e2e8f0; color: #1e293b; border-bottom-right-radius: 3px; }
+  .chat-thread { display: flex; flex-direction: column; gap: 14px; }
+  .chat-row { display: flex; align-items: flex-end; gap: 8px; max-width: 74%; }
+  .chat-row.row-customer { margin-right: auto; }
+  .chat-row.row-agent { margin-left: auto; flex-direction: row-reverse; }
+  .chat-col { display: flex; flex-direction: column; min-width: 0; }
+  .row-agent .chat-col { align-items: flex-end; }
+  .chat-head { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
+  .row-agent .chat-head { flex-direction: row-reverse; }
+  .chat-name { font-size: 11px; font-weight: 700; color: #475569; }
+  .chat-role-tag { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.2px; padding: 1px 6px; border-radius: 5px; }
+  .chat-role-tag.tag-customer { background: #eff6ff; color: #1d4ed8; }
+  .chat-role-tag.tag-agent { background: #f0f9ff; color: #0369a1; }
+  .chat-bubble { padding: 8px 12px; border-radius: 14px; font-size: 13px; line-height: 1.5; white-space: pre-wrap; }
+  .row-customer .chat-bubble { background: #fff; border: 1px solid #e2e8f0; color: #1e293b; border-bottom-left-radius: 3px; }
+  .row-agent .chat-bubble { background: #0369a1; color: #fff; border-bottom-right-radius: 3px; }
   .chat-ts { font-size: 10px; color: #adb5bd; margin-top: 3px; }
+  .row-agent .chat-ts { text-align: right; }
+
+  .chat-system {
+    display: flex; align-items: flex-start; gap: 9px; max-width: 88%; margin: 2px auto;
+    background: #eff6ff; border: 1px solid #dbeafe; border-radius: 13px; padding: 10px 13px;
+  }
+  .chat-system-icon {
+    width: 22px; height: 22px; border-radius: 6px; background: #3b82f6; color: #fff; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .chat-system-icon svg { width: 12px; height: 12px; }
+  .chat-system-body { min-width: 0; }
+  .chat-system-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 2px; }
+  .chat-system-name { font-size: 11px; font-weight: 700; color: #1e3a8a; }
+  .chat-system-text { font-size: 12.5px; line-height: 1.5; color: #1e3a8a; }
+
+  .chat-date-divider { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
+  .chat-date-divider::before, .chat-date-divider::after { content: ''; flex: 1; height: 1px; background: #e2e8f0; }
+  .chat-date-divider span { font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap; }
 
   @media (max-width: 900px) {
     .container { margin: 12px auto; padding: 0 10px; }
@@ -426,22 +452,62 @@ function renderChatText(text, requesterName) {
       .map(line => `<div>${escText(line)}</div>`).join('');
   }
 
-  // İlk konuşan taraf müşteridir (chat'ler her zaman müşteri tarafından başlatılır) —
-  // ticket'taki requester_name ile chat'teki görünen ad her zaman örtüşmeyebiliyor,
-  // bu yüzden requester_name'e güvenmek yerine transkriptin kendisinden çıkarıyoruz.
+  // İlk konuşan (sistem/bot mesajı değil) taraf müşteridir (chat'ler genelde bot
+  // karşılamasıyla başlar) — ticket'taki requester_name ile chat'teki görünen ad her
+  // zaman örtüşmeyebiliyor, bu yüzden requester_name'e güvenmek yerine transkriptin
+  // kendisinden çıkarıyoruz.
   const liveTurns = turns.filter(Boolean);
-  const customerName = liveTurns[0].name.toLowerCase();
+  const firstHumanTurn = liveTurns.find(t => !isSystemSender(t.name)) || liveTurns[0];
+  const customerName = firstHumanTurn.name.toLowerCase();
+  let lastDate = null;
   return '<div class="chat-thread">' + liveTurns.map(t => {
+    // ts örneği: "09:13 AM, 29th Jul" — virgülden sonrası tarih kısmı, gün değişince ayraç göster.
+    const dateOnly = t.ts.split(',')[1]?.trim() || '';
+    const dateDivider = dateOnly && dateOnly !== lastDate ? `<div class="chat-date-divider"><span>${escText(dateOnly)}</span></div>` : '';
+    lastDate = dateOnly || lastDate;
+
+    if (isSystemSender(t.name)) {
+      return dateDivider + `
+        <div class="chat-system">
+          <div class="chat-system-icon">${SYSTEM_MSG_ICON_SVG}</div>
+          <div class="chat-system-body">
+            <div class="chat-system-head">
+              <span class="chat-system-name">${escText(t.name)}</span>
+              <span class="chat-ts">${escText(t.ts)}</span>
+            </div>
+            <div class="chat-system-text">${escText(t.msg)}</div>
+          </div>
+        </div>`;
+    }
+
     const isCustomer = t.name.toLowerCase() === customerName;
-    const cls = isCustomer ? 'chat-customer' : 'chat-agent';
-    return `
-      <div class="chat-turn ${cls}">
-        <div class="chat-name">${escText(t.name)}</div>
-        <div class="chat-bubble">${escText(t.msg)}</div>
-        <div class="chat-ts">${escText(t.ts)}</div>
+    const rowCls = isCustomer ? 'row-customer' : 'row-agent';
+    const tagCls = isCustomer ? 'tag-customer' : 'tag-agent';
+    const tagLabel = isCustomer ? 'Müşteri' : 'Temsilci';
+    return dateDivider + `
+      <div class="chat-row ${rowCls}">
+        ${initialsAvatar(t.name, 24)}
+        <div class="chat-col">
+          <div class="chat-head">
+            <span class="chat-name">${escText(t.name)}</span>
+            <span class="chat-role-tag ${tagCls}">${tagLabel}</span>
+          </div>
+          <div class="chat-bubble">${escText(t.msg)}</div>
+          <div class="chat-ts">${escText(t.ts)}</div>
+        </div>
       </div>`;
   }).join('') + '</div>';
 }
+
+// Chat widget'larının otomatik/bot mesajları genelde ürün adıyla ("Apsiyon", "Sistem",
+// "Bot" vb.) geliyor — bunları müşteri/temsilci baloncuğu yerine ayrı, nötr bir
+// "sistem mesajı" kartı olarak göstermek orijinal Freshdesk görünümüne daha yakın.
+const SYSTEM_SENDER_RE = /^(apsiyon|sistem|system|bot|chat\s*bot|otomatik)\b/i;
+function isSystemSender(name) {
+  return SYSTEM_SENDER_RE.test((name || '').trim());
+}
+
+const SYSTEM_MSG_ICON_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`;
 
 function escText(str) {
   if (!str) return '';
